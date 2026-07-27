@@ -1,0 +1,28 @@
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Node dependencies & builds
+node_modules/
+.next/
+dist/
+out/
+build/
+*.tsbuildinfo
+
+# Python caches & virtual environments
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+env/
+venv/
+
+# Logs & scratch files
+logs/
+*.log
+scratch/
+test_*.py
+backend/data/Datasets_Chest_xrays/

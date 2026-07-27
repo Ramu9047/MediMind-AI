@@ -1,0 +1,107 @@
+'use client';
+
+import React, { createContext, useContext, useState, useEffect } from 'react';
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: 'patient' | 'doctor' | 'lab' | 'admin';
+  specialization?: string;
+}
+
+interface AuthContextType {
+  user: User | null;
+  token: string | null;
+  loading: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  signup: (name: string, email: string, role: string, password?: string) => Promise<void>;
+  logout: () => void;
+  quickLogin: (role: 'patient' | 'doctor' | 'lab' | 'admin') => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    const savedToken = localStorage.getItem('medimind_token');
+    const savedUser = localStorage.getItem('medimind_user');
+    if (savedToken && savedUser) {
+      setToken(savedToken);
+      setUser(JSON.parse(savedUser));
+    }
+    setLoading(false);
+  }, []);
+
+  const login = async (email: string, password: string) => {
+    const res = await fetch('/api/v1/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || 'Login failed');
+    }
+    const data = await res.json();
+    setToken(data.access_token);
+    setUser(data.user);
+    localStorage.setItem('medimind_token', data.access_token);
+    localStorage.setItem('medimind_user', JSON.stringify(data.user));
+  };
+
+  const signup = async (name: string, email: string, role: string, password: string = 'password123') => {
+    const res = await fetch('/api/v1/auth/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, role, password }),
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || 'Signup failed');
+    }
+    const data = await res.json();
+    setToken(data.access_token);
+    setUser(data.user);
+    localStorage.setItem('medimind_token', data.access_token);
+    localStorage.setItem('medimind_user', JSON.stringify(data.user));
+  };
+
+  const logout = () => {
+    setUser(null);
+    setToken(null);
+    localStorage.removeItem('medimind_token');
+    localStorage.removeItem('medimind_user');
+  };
+
+  const quickLogin = async (role: 'patient' | 'doctor' | 'lab' | 'admin') => {
+    const emailMap = {
+      patient: 'patient@medimind.ai',
+      doctor: 'doctor@medimind.ai',
+      lab: 'lab@medimind.ai',
+      admin: 'admin@medimind.ai',
+    };
+    if (role === 'admin') {
+      throw new Error("Admin authentication requires entering your env-configured password on the login form.");
+    }
+    await login(emailMap[role], 'password123');
+  };
+
+  return (
+    <AuthContext.Provider value={{ user, token, loading, login, signup, logout, quickLogin }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+}

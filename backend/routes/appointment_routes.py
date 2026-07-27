@@ -1,0 +1,115 @@
+import uuid
+from datetime import datetime
+from fastapi import APIRouter, Depends, HTTPException, status
+from models import AppointmentCreate, AppointmentResponse, AppointmentStatus, UserRole
+from auth import get_current_user
+from database import get_database
+
+router = APIRouter(prefix="/appointments", tags=["Appointments"])
+
+@router.get("/doctors")
+async def list_available_doctors():
+    db = get_database()
+    doctors = await db["users"].find({"role": UserRole.DOCTOR}).to_list(length=50)
+    result = []
+    for doc in doctors:
+        result.append({
+            "id": doc["_id"],
+            "name": doc["name"],
+            "specialization": doc.get("specialization", "General Physician"),
+            "email": doc["email"]
+        })
+    return result
+
+@router.post("/book", response_model=AppointmentResponse)
+async def book_appointment(appt_in: AppointmentCreate, current_user: dict = Depends(get_current_user)):
+    db = get_database()
+    appt_id = str(uuid.uuid4())
+
+    prediction_summary = None
+    if appt_in.prediction_id:
+        pred = await db["predictions"].find_one({"_id": appt_in.prediction_id})
+        if pred:
+            prediction_summary = {
+                "predicted_disease": pred.get("predicted_disease"),
+                "risk_level": pred.get("risk_level"),
+                "llm_explanation": pred.get("llm_explanation"),
+                "symptoms": pred.get("symptoms", [])
+            }
+
+    appt_doc = {
+        "_id": appt_id,
+        "patient_id": current_user["_id"],
+        "patient_name": current_user["name"],
+        "doctor_id": appt_in.doctor_id,
+        "doctor_name": appt_in.doctor_name,
+        "appointment_date": appt_in.appointment_date,
+        "appointment_time": appt_in.appointment_time,
+        "reason": appt_in.reason,
+        "status": AppointmentStatus.PENDING,
+        "prediction_summary": prediction_summary,
+        "created_at": datetime.utcnow()
+    }
+
+    await db["appointments"].insert_one(appt_doc)
+
+    # Insert into timeline
+    await db["timeline"].insert_one({
+        "_id": str(uuid.uuid4()),
+        "patient_id": current_user["_id"],
+        "event_type": "Doctor Appointment",
+        "title": f"Appointment Booked: Dr. {appt_in.doctor_name}",
+        "description": f"Scheduled for {appt_in.appointment_date} at {appt_in.appointment_time}. Reason: {appt_in.reason}",
+        "status_badge": AppointmentStatus.PENDING,
+        "timestamp": datetime.utcnow()
+    })
+
+    return AppointmentResponse(
+        id=appt_id,
+        patient_id=current_user["_id"],
+        patient_name=current_user["name"],
+        doctor_id=appt_in.doctor_id,
+        doctor_name=appt_in.doctor_name,
+        appointment_date=appt_in.appointment_date,
+        appointment_time=appt_in.appointment_time,
+        reason=appt_in.reason,
+        status=AppointmentStatus.PENDING,
+        prediction_summary=prediction_summary,
+        created_at=appt_doc["created_at"]
+    )
+
+@router.get("/my")
+async def get_my_appointments(current_user: dict = Depends(get_current_user)):
+    db = get_database()
+    role = current_user.get("role")
+    if role == UserRole.DOCTOR:
+        appts = await db["appointments"].find({"doctor_id": current_user["_id"]}).to_list(length=100)
+    else:
+        appts = await db["appointments"].find({"patient_id": current_user["_id"]}).to_list(length=100)
+    
+    result = []
+    for a in appts:
+        result.append(AppointmentResponse(
+            id=a["_id"],
+            patient_id=a["patient_id"],
+            patient_name=a.get("patient_name", "Patient"),
+            doctor_id=a["doctor_id"],
+            doctor_name=a.get("doctor_name", "Doctor"),
+            appointment_date=a["appointment_date"],
+            appointment_time=a["appointment_time"],
+            reason=a["reason"],
+            status=a.get("status", AppointmentStatus.PENDING),
+            prediction_summary=a.get("prediction_summary"),
+            created_at=a.get("created_at", datetime.utcnow())
+        ))
+    return result
+
+@router.put("/{appt_id}/status")
+async def update_appointment_status(appt_id: str, status_val: str, current_user: dict = Depends(get_current_user)):
+    db = get_database()
+    appt = await db["appointments"].find_one({"_id": appt_id})
+    if not appt:
+        raise HTTPException(status_code=404, detail="Appointment not found")
+
+    await db["appointments"].update_one({"_id": appt_id}, {"$set": {"status": status_val}})
+    return {"message": f"Appointment status updated to {status_val}"}
