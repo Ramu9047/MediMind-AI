@@ -14,7 +14,7 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<User>;
   signup: (name: string, email: string, role: string, password?: string) => Promise<void>;
   logout: () => void;
   quickLogin: (role: 'patient' | 'doctor' | 'lab' | 'admin') => Promise<void>;
@@ -52,6 +52,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(data.user);
     localStorage.setItem('medimind_token', data.access_token);
     localStorage.setItem('medimind_user', JSON.stringify(data.user));
+    return data.user;
   };
 
   const signup = async (name: string, email: string, role: string, password: string = 'password123') => {
