@@ -19,11 +19,16 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
     try {
-      await login(email, password);
-      if (email.includes('admin')) {
+      const loggedUser = await login(email, password);
+      const role = loggedUser?.role || (email.includes('admin') ? 'admin' : email.includes('doctor') ? 'doctor' : email.includes('lab') ? 'lab' : 'patient');
+      if (role === 'admin') {
         router.push('/admin/dashboard');
+      } else if (role === 'doctor') {
+        router.push('/doctor/dashboard');
+      } else if (role === 'lab') {
+        router.push('/lab/dashboard');
       } else {
-        router.push('/patient/symptom-checker');
+        router.push('/patient/dashboard');
       }
     } catch (err: any) {
       setError(err.message || 'Invalid credentials');
