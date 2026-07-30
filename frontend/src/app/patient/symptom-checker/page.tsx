@@ -82,7 +82,7 @@ export default function SymptomCheckerPage() {
     setPrediction(null);
 
     try {
-      const res = await fetchApi<any>('/prediction/predict', {
+      const res = await fetchApi<any>('/predictions/check', {
         method: 'POST',
         body: JSON.stringify({ symptoms: selectedSymptoms }),
       });

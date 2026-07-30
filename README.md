@@ -1,5 +1,7 @@
 # MediMind AI - Clinical Healthcare Coordination Platform
 
+![MediMind AI Demo](docs/demo/medimind-walkthrough.gif)
+
 > **CRITICAL MEDICAL DISCLAIMER (NON-NEGOTIABLE):**
 > **MediMind AI provides educational information only and is not a substitute for professional medical advice, diagnosis, or treatment. Always consult a qualified healthcare provider.**
 >
@@ -55,6 +57,27 @@ MediMind AI
 └── /admin
     └── /dashboard (Security Hardening Checklist & Operational Audit Logs)
 ```
+
+---
+
+## 📸 Screenshots
+
+### Patient Dashboard
+![Patient Dashboard](docs/screenshots/patient-dashboard.png)
+*Patient portal — vitals tracking, symptom checker access, and appointment history.*
+
+### Doctor Dashboard
+![Doctor Dashboard](docs/screenshots/doctor-dashboard.png)
+*Doctor portal — consultation queue, patient triage overview, and symptom predictions.*
+
+### Lab Dashboard
+![Lab Dashboard](docs/screenshots/lab-dashboard.png)
+*Lab technician portal — pending test order queue and result entry interface.*
+
+### Admin Security Dashboard
+![Admin Dashboard](docs/screenshots/admin-dashboard.png)
+*Admin portal — system performance metrics, security logs, and role management.*
+
 
 ---
 
