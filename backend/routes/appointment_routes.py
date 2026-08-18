@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, status
 from models import AppointmentCreate, AppointmentResponse, AppointmentStatus, UserRole
-from auth import get_current_user
+from auth import get_current_user, require_role
 from database import get_database
 
 router = APIRouter(prefix="/appointments", tags=["Appointments"])
@@ -21,9 +21,49 @@ async def list_available_doctors():
         })
     return result
 
-@router.post("/book", response_model=AppointmentResponse)
-async def book_appointment(appt_in: AppointmentCreate, current_user: dict = Depends(get_current_user)):
+@router.get("/booked-slots")
+async def get_booked_slots(doctor_id: str, date: str):
     db = get_database()
+    appts = await db["appointments"].find({
+        "doctor_id": doctor_id,
+        "appointment_date": date,
+        "status": {"$ne": "Cancelled"}
+    }).to_list(length=100)
+    
+    booked = [a["appointment_time"] for a in appts if a.get("appointment_time")]
+    return {"doctor_id": doctor_id, "date": date, "booked_slots": booked}
+
+@router.post("/book", response_model=AppointmentResponse)
+async def book_appointment(
+    appt_in: AppointmentCreate,
+    current_user: dict = Depends(require_role([UserRole.PATIENT]))
+):
+    # Validate date is not in the past
+    try:
+        appt_date_obj = datetime.strptime(appt_in.appointment_date, "%Y-%m-%d").date()
+        if appt_date_obj < datetime.utcnow().date():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot book appointments for past dates."
+            )
+    except ValueError:
+        pass  # If non-standard date string passed, allow but recommend standard format
+
+    db = get_database()
+
+    # Conflict check: verify if the time slot is already taken for this doctor
+    existing_booking = await db["appointments"].find_one({
+        "doctor_id": appt_in.doctor_id,
+        "appointment_date": appt_in.appointment_date,
+        "appointment_time": appt_in.appointment_time,
+        "status": {"$ne": "Cancelled"}
+    })
+    if existing_booking:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"The time slot '{appt_in.appointment_time}' on {appt_in.appointment_date} is already booked for Dr. {appt_in.doctor_name}. Please choose another available time slot."
+        )
+
     appt_id = str(uuid.uuid4())
 
     prediction_summary = None
@@ -105,7 +145,11 @@ async def get_my_appointments(current_user: dict = Depends(get_current_user)):
     return result
 
 @router.put("/{appt_id}/status")
-async def update_appointment_status(appt_id: str, status_val: str, current_user: dict = Depends(get_current_user)):
+async def update_appointment_status(
+    appt_id: str,
+    status_val: str,
+    current_user: dict = Depends(require_role([UserRole.DOCTOR, UserRole.ADMIN]))
+):
     db = get_database()
     appt = await db["appointments"].find_one({"_id": appt_id})
     if not appt:

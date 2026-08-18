@@ -15,6 +15,8 @@ import {
 } from 'lucide-react';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 
+import ProtectedRoute from '@/components/ProtectedRoute';
+
 const SAMPLE_VITALS_TREND = [
   { day: 'Mon', bp_sys: 122, bp_dia: 82, glucose: 98 },
   { day: 'Tue', bp_sys: 120, bp_dia: 80, glucose: 95 },
@@ -68,6 +70,7 @@ export default function PatientDashboardPage() {
   };
 
   return (
+    <ProtectedRoute allowedRoles={['patient']}>
     <div className="space-y-8 py-4 animate-card-rise">
       
       {/* Welcome Banner */}
@@ -302,5 +305,6 @@ export default function PatientDashboardPage() {
       </div>
 
     </div>
+    </ProtectedRoute>
   );
 }

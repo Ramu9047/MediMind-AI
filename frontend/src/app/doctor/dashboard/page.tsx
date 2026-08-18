@@ -6,6 +6,8 @@ import { fetchApi } from '@/lib/api';
 import Link from 'next/link';
 import { Stethoscope, User, Calendar, Activity, ArrowRight } from 'lucide-react';
 
+import ProtectedRoute from '@/components/ProtectedRoute';
+
 export default function DoctorDashboardPage() {
   const { user } = useAuth();
   const [patients, setPatients] = useState<any[]>([]);
@@ -26,6 +28,7 @@ export default function DoctorDashboardPage() {
   };
 
   return (
+    <ProtectedRoute allowedRoles={['doctor']}>
     <div className="space-y-8 py-4 animate-card-rise">
       {/* Header */}
       <div className="p-6 rounded-3xl bg-gradient-to-r from-mistTeal via-white to-bgLight dark:from-darkSurface dark:to-darkBg border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
@@ -143,5 +146,6 @@ export default function DoctorDashboardPage() {
 
       </div>
     </div>
+    </ProtectedRoute>
   );
 }

@@ -6,12 +6,21 @@ import { useSearchParams } from 'next/navigation';
 import { fetchApi } from '@/lib/api';
 import { FlaskConical, FileText, CheckCircle2, AlertTriangle } from 'lucide-react';
 
+const POPULAR_LAB_PRESETS = [
+  { name: 'Complete Blood Count (CBC)', note: 'Fasting not required. Routine blood health screening.' },
+  { name: 'Comprehensive Metabolic Panel (CMP)', note: 'Fasting 8-12 hours required. Checks glucose & kidney function.' },
+  { name: 'Lipid Profile & Cholesterol Risk', note: 'Fasting 9-12 hours required. Evaluates HDL, LDL & Triglycerides.' },
+  { name: 'HbA1c Glycated Hemoglobin', note: 'Fasting not required. Measures average blood sugar over 3 months.' },
+  { name: 'Thyroid Function Panel (TSH / T4)', note: 'Morning sample recommended. Evaluates thyroid activity.' },
+  { name: 'Vitamin D & B12 Panel', note: 'Routine micronutrient deficit screening.' },
+];
+
 function LabTestsContent() {
   const searchParams = useSearchParams();
   const testNameParam = searchParams.get('test_name');
 
-  const [testName, setTestName] = useState(testNameParam || 'Comprehensive Metabolic & Lipid Panel');
-  const [notes, setNotes] = useState('Fasting for 8 hours prior to sample collection.');
+  const [testName, setTestName] = useState(testNameParam || '');
+  const [notes, setNotes] = useState('');
   const [myLabTests, setMyLabTests] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -40,6 +49,11 @@ function LabTestsContent() {
     }
   };
 
+  const handleSelectPreset = (preset: { name: string; note: string }) => {
+    setTestName(preset.name);
+    setNotes(preset.note);
+  };
+
   return (
     <div className="space-y-8 max-w-4xl mx-auto py-4 animate-card-rise">
       <div className="space-y-2 text-center">
@@ -50,7 +64,7 @@ function LabTestsContent() {
       <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
         
         {/* Order Form */}
-        <div className="md:col-span-5 clinical-card p-6 space-y-4">
+        <div className="md:col-span-6 clinical-card p-6 space-y-4">
           <h3 className="text-base font-heading font-bold text-ink dark:text-white flex items-center gap-2">
             <FlaskConical className="w-5 h-5 text-purple-600 dark:text-purple-400" />
             <span>Order Diagnostic Test</span>
@@ -62,14 +76,36 @@ function LabTestsContent() {
             </div>
           )}
 
+          {/* Quick-Select Presets */}
+          <div>
+            <label className="block text-xs font-mono font-semibold text-inkMuted uppercase mb-1.5">Quick-Select Common Panels</label>
+            <div className="grid grid-cols-2 gap-1.5">
+              {POPULAR_LAB_PRESETS.map((p, idx) => (
+                <button
+                  type="button"
+                  key={idx}
+                  onClick={() => handleSelectPreset(p)}
+                  className={`p-2 rounded-xl text-[11px] font-medium text-left transition-all border ${
+                    testName === p.name
+                      ? 'bg-purple-600 text-white border-purple-700 shadow-sm'
+                      : 'bg-purple-50 dark:bg-slate-800 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-slate-700 hover:bg-purple-100'
+                  }`}
+                >
+                  <span className="font-bold block truncate">{p.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
           <form onSubmit={handleBook} className="space-y-4">
             <div>
-              <label className="block text-xs font-mono font-semibold text-inkMuted uppercase mb-1">Test Name</label>
+              <label className="block text-xs font-mono font-semibold text-inkMuted uppercase mb-1">Test Name / Custom Panel</label>
               <input
                 type="text"
                 required
                 value={testName}
                 onChange={(e) => setTestName(e.target.value)}
+                placeholder="Select preset above or type test name..."
                 className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-ink dark:text-white focus:outline-none focus:border-tealPrimary"
               />
             </div>
@@ -80,14 +116,15 @@ function LabTestsContent() {
                 rows={3}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
+                placeholder="Fasting requirements or clinical notes..."
                 className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-ink dark:text-white focus:outline-none focus:border-tealPrimary"
               />
             </div>
 
             <button
               type="submit"
-              disabled={loading}
-              className="w-full btn-teal py-3 font-semibold text-xs shadow-md"
+              disabled={loading || !testName}
+              className="w-full btn-teal py-3 font-semibold text-xs shadow-md disabled:opacity-50"
             >
               {loading ? 'Submitting Order...' : 'Submit Lab Order'}
             </button>
@@ -168,10 +205,14 @@ function LabTestsContent() {
   );
 }
 
+import ProtectedRoute from '@/components/ProtectedRoute';
+
 export default function PatientLabTestsPage() {
   return (
-    <Suspense fallback={<div className="text-center py-12 text-xs text-inkMuted">Loading lab orders...</div>}>
-      <LabTestsContent />
-    </Suspense>
+    <ProtectedRoute allowedRoles={['patient']}>
+      <Suspense fallback={<div className="text-center py-12 text-xs text-inkMuted">Loading lab orders...</div>}>
+        <LabTestsContent />
+      </Suspense>
+    </ProtectedRoute>
   );
 }

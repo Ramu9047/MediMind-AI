@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 export interface User {
   id: string;
@@ -26,6 +27,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const router = useRouter();
 
   useEffect(() => {
     const savedToken = localStorage.getItem('medimind_token');
@@ -77,6 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setToken(null);
     localStorage.removeItem('medimind_token');
     localStorage.removeItem('medimind_user');
+    router.push('/auth/login');
   };
 
   const quickLogin = async (role: 'patient' | 'doctor' | 'lab' | 'admin') => {

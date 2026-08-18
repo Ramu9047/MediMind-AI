@@ -17,6 +17,7 @@ import {
   Info,
 } from 'lucide-react';
 import ECGPulseLine from '@/components/ECGPulseLine';
+import ProtectedRoute from '@/components/ProtectedRoute';
 
 const ALL_SYMPTOMS = [
   'itching', 'skin_rash', 'nodal_skin_eruptions', 'continuous_sneezing', 'shivering', 'chills',
@@ -54,7 +55,7 @@ export default function SymptomCheckerPage() {
   const { user } = useAuth();
   const router = useRouter();
 
-  const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>(['stomach_pain', 'acidity']);
+  const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [prediction, setPrediction] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -114,6 +115,7 @@ export default function SymptomCheckerPage() {
   };
 
   return (
+    <ProtectedRoute allowedRoles={['patient']}>
     <div className="space-y-8 py-2 animate-card-rise">
       {/* HEADER */}
       <div className="space-y-2">
@@ -366,5 +368,6 @@ export default function SymptomCheckerPage() {
         </div>
       </div>
     </div>
+    </ProtectedRoute>
   );
 }

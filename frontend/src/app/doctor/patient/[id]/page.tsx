@@ -5,6 +5,8 @@ import { useParams } from 'next/navigation';
 import { fetchApi } from '@/lib/api';
 import { Activity, FlaskConical } from 'lucide-react';
 
+import ProtectedRoute from '@/components/ProtectedRoute';
+
 export default function DoctorPatientRecordPage() {
   const params = useParams();
   const patientId = params.id as string;
@@ -32,6 +34,7 @@ export default function DoctorPatientRecordPage() {
   const { patient_info, timeline, predictions, lab_tests } = record;
 
   return (
+    <ProtectedRoute allowedRoles={['doctor', 'admin']}>
     <div className="space-y-8 max-w-5xl mx-auto py-4 animate-card-rise">
       
       {/* Patient Demographics & Vitals Header */}
@@ -134,5 +137,6 @@ export default function DoctorPatientRecordPage() {
       </div>
 
     </div>
+    </ProtectedRoute>
   );
 }

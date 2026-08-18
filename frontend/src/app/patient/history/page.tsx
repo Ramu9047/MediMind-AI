@@ -5,6 +5,8 @@ import { useAuth } from '@/context/AuthContext';
 import { fetchApi } from '@/lib/api';
 import { Clock, Activity, Stethoscope, FlaskConical, FileText } from 'lucide-react';
 
+import ProtectedRoute from '@/components/ProtectedRoute';
+
 export default function MedicalHistoryPage() {
   const { user } = useAuth();
   const [timeline, setTimeline] = useState<any[]>([]);
@@ -33,6 +35,7 @@ export default function MedicalHistoryPage() {
   };
 
   return (
+    <ProtectedRoute allowedRoles={['patient']}>
     <div className="space-y-8 max-w-3xl mx-auto py-4 animate-card-rise">
       <div className="space-y-2 text-center">
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-500/10 border border-teal-500/30 text-tealPrimary dark:text-teal-400 text-xs font-mono font-semibold uppercase tracking-wider">
@@ -85,5 +88,6 @@ export default function MedicalHistoryPage() {
         </div>
       )}
     </div>
+    </ProtectedRoute>
   );
 }

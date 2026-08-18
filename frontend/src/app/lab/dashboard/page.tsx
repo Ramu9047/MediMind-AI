@@ -5,6 +5,8 @@ import { useAuth } from '@/context/AuthContext';
 import { fetchApi } from '@/lib/api';
 import { FlaskConical, Upload, CheckCircle2, Clock } from 'lucide-react';
 
+import ProtectedRoute from '@/components/ProtectedRoute';
+
 export default function LabDashboardPage() {
   const { user } = useAuth();
   const [labTests, setLabTests] = useState<any[]>([]);
@@ -52,6 +54,7 @@ export default function LabDashboardPage() {
   };
 
   return (
+    <ProtectedRoute allowedRoles={['lab']}>
     <div className="space-y-8 py-4 max-w-5xl mx-auto animate-card-rise">
       
       {/* Header */}
@@ -190,5 +193,6 @@ export default function LabDashboardPage() {
 
       </div>
     </div>
+    </ProtectedRoute>
   );
 }

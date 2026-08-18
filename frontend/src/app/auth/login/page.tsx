@@ -4,10 +4,10 @@ import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Lock, Mail, Activity, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Lock, Mail, Activity } from 'lucide-react';
 
 export default function LoginPage() {
-  const { login, quickLogin } = useAuth();
+  const { login } = useAuth();
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -37,27 +37,6 @@ export default function LoginPage() {
     }
   };
 
-  const handleQuick = async (role: 'patient' | 'doctor' | 'lab' | 'admin') => {
-    setError('');
-    if (role === 'admin') {
-      setEmail('admin@medimind.ai');
-      setPassword('');
-      setError('Please enter your server-configured admin password from .env');
-      return;
-    }
-    setLoading(true);
-    try {
-      await quickLogin(role);
-      if (role === 'patient') router.push('/patient/symptom-checker');
-      else if (role === 'doctor') router.push('/doctor/dashboard');
-      else if (role === 'lab') router.push('/lab/dashboard');
-    } catch (err: any) {
-      setError(err.message || 'Quick login failed');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="max-w-md mx-auto py-12 space-y-6 animate-card-rise">
       <div className="text-center space-y-2">
@@ -75,7 +54,7 @@ export default function LoginPage() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} autoComplete="off" className="space-y-4">
           <div>
             <label className="block text-xs font-mono font-semibold text-inkMuted uppercase tracking-wider mb-1">Email Address</label>
             <div className="relative">
@@ -83,6 +62,7 @@ export default function LoginPage() {
               <input
                 type="email"
                 required
+                autoComplete="username"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="name@example.com"
@@ -98,6 +78,7 @@ export default function LoginPage() {
               <input
                 type="password"
                 required
+                autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
@@ -114,44 +95,14 @@ export default function LoginPage() {
             {loading ? 'Authenticating...' : 'Sign In'}
           </button>
         </form>
-
-        <div className="relative border-t border-slate-200 dark:border-slate-800 pt-4">
-          <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-white dark:bg-darkSurface px-3 text-[11px] font-mono font-semibold text-inkMuted uppercase tracking-wider">
-            Quick Demo Logins
-          </span>
-
-          <div className="grid grid-cols-2 gap-2 pt-2">
-            <button
-              onClick={() => handleQuick('patient')}
-              className="px-3 py-2 rounded-xl bg-mistTeal dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 text-xs text-tealPrimary font-medium text-left flex items-center justify-between hover:bg-tealPrimary hover:text-white transition-all"
-            >
-              <span>Patient Demo</span>
-              <ArrowRight className="w-3 h-3" />
-            </button>
-            <button
-              onClick={() => handleQuick('doctor')}
-              className="px-3 py-2 rounded-xl bg-mistTeal dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 text-xs text-tealPrimary font-medium text-left flex items-center justify-between hover:bg-tealPrimary hover:text-white transition-all"
-            >
-              <span>Doctor Demo</span>
-              <ArrowRight className="w-3 h-3" />
-            </button>
-            <button
-              onClick={() => handleQuick('lab')}
-              className="px-3 py-2 rounded-xl bg-purple-50 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 text-xs text-purple-600 dark:text-purple-400 font-medium text-left flex items-center justify-between hover:bg-purple-600 hover:text-white transition-all"
-            >
-              <span>Lab Tech Demo</span>
-              <ArrowRight className="w-3 h-3" />
-            </button>
-            <button
-              onClick={() => handleQuick('admin')}
-              className="px-3 py-2 rounded-xl bg-amber-50 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 text-xs text-amberWarn font-medium text-left flex items-center justify-between hover:bg-amberWarn hover:text-white transition-all"
-            >
-              <span>Admin Login</span>
-              <ArrowRight className="w-3 h-3" />
-            </button>
-          </div>
-        </div>
       </div>
+
+      <p className="text-center text-xs text-inkMuted">
+        Don&apos;t have a patient account?{' '}
+        <Link href="/auth/signup" className="text-tealPrimary hover:underline font-semibold">
+          Register Patient Account
+        </Link>
+      </p>
     </div>
   );
 }

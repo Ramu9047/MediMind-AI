@@ -4,20 +4,54 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useSearchParams } from 'next/navigation';
 import { fetchApi } from '@/lib/api';
-import { Stethoscope, Calendar } from 'lucide-react';
+import { Stethoscope, Calendar, Clock, Lock, CheckCircle2 } from 'lucide-react';
+import ProtectedRoute from '@/components/ProtectedRoute';
+
+const CLINICAL_TIME_SLOTS = [
+  '09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM',
+  '11:00 AM', '11:30 AM', '02:00 PM', '02:30 PM',
+  '03:00 PM', '03:30 PM', '04:00 PM', '04:30 PM'
+];
+
+const getLocalDateStr = () => {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const isSlotPassedToday = (slotTime: string, selectedDate: string) => {
+  const today = getLocalDateStr();
+  if (selectedDate !== today) return false;
+
+  const now = new Date();
+  const [timePart, modifier] = slotTime.split(' ');
+  let [hours, minutes] = timePart.split(':').map(Number);
+  if (modifier === 'PM' && hours < 12) hours += 12;
+  if (modifier === 'AM' && hours === 12) hours = 0;
+
+  const slotDate = new Date();
+  slotDate.setHours(hours, minutes, 0, 0);
+
+  return slotDate < now;
+};
 
 function AppointmentsContent() {
   const searchParams = useSearchParams();
   const predId = searchParams.get('pred_id');
   const specialistParam = searchParams.get('specialist');
 
+  const todayStr = getLocalDateStr();
+
   const [doctors, setDoctors] = useState<any[]>([]);
   const [myAppointments, setMyAppointments] = useState<any[]>([]);
   const [selectedDoctor, setSelectedDoctor] = useState<any>(null);
-  const [date, setDate] = useState('2026-07-28');
-  const [time, setTime] = useState('10:30 AM');
+  const [date, setDate] = useState(todayStr);
+  const [time, setTime] = useState('');
+  const [bookedSlots, setBookedSlots] = useState<string[]>([]);
   const [reason, setReason] = useState(
-    specialistParam ? `Consultation regarding AI prediction for ${specialistParam}` : 'General consultation'
+    specialistParam ? `Consultation regarding AI prediction for ${specialistParam}` : ''
   );
 
   const [loading, setLoading] = useState(false);
@@ -36,9 +70,24 @@ function AppointmentsContent() {
       .catch(() => {});
   }, []);
 
+  // Fetch booked slots whenever selectedDoctor or date changes
+  useEffect(() => {
+    if (selectedDoctor?.id && date) {
+      fetchApi(`/appointments/booked-slots?doctor_id=${selectedDoctor.id}&date=${date}`)
+        .then((data) => {
+          setBookedSlots(data.booked_slots || []);
+        })
+        .catch(() => setBookedSlots([]));
+    }
+  }, [selectedDoctor, date]);
+
   const handleBook = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedDoctor) return;
+    if (!time) {
+      setMessage('Please select an available time slot.');
+      return;
+    }
     setLoading(true);
     setMessage('');
     try {
@@ -55,6 +104,7 @@ function AppointmentsContent() {
       });
       setMessage('Appointment request submitted successfully!');
       setMyAppointments([res, ...myAppointments]);
+      setBookedSlots([...bookedSlots, time]);
     } catch (err: any) {
       setMessage(err.message || 'Failed to book appointment');
     } finally {
@@ -72,14 +122,18 @@ function AppointmentsContent() {
       <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
         
         {/* Booking Form */}
-        <div className="md:col-span-5 clinical-card p-6 space-y-4">
+        <div className="md:col-span-6 clinical-card p-6 space-y-4">
           <h3 className="text-base font-heading font-bold text-ink dark:text-white flex items-center gap-2">
             <Stethoscope className="w-5 h-5 text-tealPrimary" />
             <span>Book Consultation</span>
           </h3>
 
           {message && (
-            <div className="p-3 rounded-xl bg-teal-500/10 border border-teal-500/30 text-tealPrimary dark:text-teal-400 text-xs font-medium">
+            <div className={`p-3 rounded-xl text-xs font-medium ${
+              message.includes('successfully')
+                ? 'bg-teal-500/10 border border-teal-500/30 text-tealPrimary dark:text-teal-400'
+                : 'bg-rose-500/10 border border-rose-500/30 text-dangerRed'
+            }`}>
               {message}
             </div>
           )}
@@ -92,6 +146,7 @@ function AppointmentsContent() {
                 onChange={(e) => {
                   const doc = doctors.find((d) => d.id === e.target.value);
                   setSelectedDoctor(doc);
+                  setTime('');
                 }}
                 className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-ink dark:text-white focus:outline-none focus:border-tealPrimary"
               >
@@ -107,21 +162,62 @@ function AppointmentsContent() {
               <label className="block text-xs font-mono font-semibold text-inkMuted uppercase mb-1">Preferred Date</label>
               <input
                 type="date"
+                min={todayStr}
                 value={date}
-                onChange={(e) => setDate(e.target.value)}
+                onChange={(e) => {
+                  setDate(e.target.value);
+                  setTime('');
+                }}
                 className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-ink dark:text-white focus:outline-none focus:border-tealPrimary"
               />
             </div>
 
+            {/* DYNAMIC TIME SLOT PICKER GRID */}
             <div>
-              <label className="block text-xs font-mono font-semibold text-inkMuted uppercase mb-1">Preferred Time</label>
-              <input
-                type="text"
-                value={time}
-                onChange={(e) => setTime(e.target.value)}
-                placeholder="e.g. 10:30 AM"
-                className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-ink dark:text-white focus:outline-none focus:border-tealPrimary"
-              />
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-mono font-semibold text-inkMuted uppercase">Select Available Time Slot</label>
+                <span className="text-[10px] text-inkMuted font-mono">
+                  {bookedSlots.length} Booked / {CLINICAL_TIME_SLOTS.length - bookedSlots.length} Free
+                </span>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                {CLINICAL_TIME_SLOTS.map((slot) => {
+                  const isBooked = bookedSlots.includes(slot);
+                  const isPassed = isSlotPassedToday(slot, date);
+                  const isDisabled = isBooked || isPassed;
+                  const isSelected = time === slot;
+
+                  if (isDisabled) {
+                    return (
+                      <div
+                        key={slot}
+                        className="p-2 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[11px] font-mono text-slate-400 dark:text-slate-600 flex items-center justify-between opacity-75 cursor-not-allowed"
+                        title={isPassed ? "This time slot has passed" : "This slot is already booked"}
+                      >
+                        <span>{slot}</span>
+                        <Lock className="w-3 h-3 text-rose-500 shrink-0" />
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <button
+                      type="button"
+                      key={slot}
+                      onClick={() => setTime(slot)}
+                      className={`p-2 rounded-xl text-[11px] font-mono font-semibold transition-all flex items-center justify-between ${
+                        isSelected
+                          ? 'bg-tealPrimary text-white shadow-sm border border-tealDeep'
+                          : 'bg-mistTeal dark:bg-slate-800 text-tealPrimary border border-tealPrimary/20 hover:bg-tealPrimary hover:text-white'
+                      }`}
+                    >
+                      <span>{slot}</span>
+                      {isSelected && <CheckCircle2 className="w-3 h-3" />}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             <div>
@@ -130,16 +226,17 @@ function AppointmentsContent() {
                 rows={3}
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
+                placeholder="Describe your health concern or symptoms..."
                 className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-ink dark:text-white focus:outline-none focus:border-tealPrimary"
               />
             </div>
 
             <button
               type="submit"
-              disabled={loading}
-              className="w-full btn-teal py-3 font-semibold text-xs shadow-md"
+              disabled={loading || !time}
+              className="w-full btn-teal py-3 font-semibold text-xs shadow-md disabled:opacity-50"
             >
-              {loading ? 'Submitting Request...' : 'Confirm Appointment Request'}
+              {loading ? 'Submitting Request...' : time ? `Confirm Request for ${time}` : 'Select a Time Slot to Proceed'}
             </button>
           </form>
         </div>
@@ -192,8 +289,10 @@ function AppointmentsContent() {
 
 export default function PatientAppointmentsPage() {
   return (
-    <Suspense fallback={<div className="text-center py-12 text-xs text-inkMuted">Loading appointments...</div>}>
-      <AppointmentsContent />
-    </Suspense>
+    <ProtectedRoute allowedRoles={['patient']}>
+      <Suspense fallback={<div className="text-center py-12 text-xs text-inkMuted">Loading appointments...</div>}>
+        <AppointmentsContent />
+      </Suspense>
+    </ProtectedRoute>
   );
 }

@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     # LLM Settings
     GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "")
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
-    LLM_MODEL: str = os.getenv("LLM_MODEL", "llama-3.3-70b-versatile")
+    LLM_MODEL: str = os.getenv("LLM_MODEL", "openai/gpt-oss-120b")
     
     # Admin Credentials (Env Sourced)
     ADMIN_EMAIL: str = os.getenv("ADMIN_EMAIL", "admin@medimind.ai")

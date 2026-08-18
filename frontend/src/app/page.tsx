@@ -22,24 +22,6 @@ import {
 import ECGPulseLine from '@/components/ECGPulseLine';
 
 export default function LandingPage() {
-  const { user, quickLogin } = useAuth();
-  const router = useRouter();
-
-  const handleRoleQuickLogin = async (role: 'patient' | 'doctor' | 'lab' | 'admin') => {
-    if (role === 'admin') {
-      router.push('/auth/login');
-      return;
-    }
-    try {
-      await quickLogin(role);
-      if (role === 'patient') router.push('/patient/symptom-checker');
-      else if (role === 'doctor') router.push('/doctor/dashboard');
-      else if (role === 'lab') router.push('/lab/dashboard');
-    } catch (e) {
-      router.push('/auth/login');
-    }
-  };
-
   return (
     <div className="space-y-16 py-4 animate-card-rise">
       {/* HERO SECTION */}
@@ -96,11 +78,11 @@ export default function LandingPage() {
       {/* SIGNATURE MOTIF: ANIMATED ECG PULSE LINE DIVIDER */}
       <ECGPulseLine variant="divider" color="teal" />
 
-      {/* QUICK ROLE DEMO LOGINS */}
+      {/* ROLE PORTALS OVERVIEW */}
       <section className="space-y-6">
         <div className="text-center max-w-xl mx-auto space-y-2">
-          <h2 className="text-2xl font-heading font-bold text-ink dark:text-white">Explore Role Portals</h2>
-          <p className="text-sm text-inkMuted">Experience the complete healthcare journey across all 4 user roles with instant demo access.</p>
+          <h2 className="text-2xl font-heading font-bold text-ink dark:text-white">Multi-Persona Clinical Ecosystem</h2>
+          <p className="text-sm text-inkMuted">Role-based security architecture tailoring workflows for Patients, Physicians, Labs, and Administrators.</p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -115,13 +97,13 @@ export default function LandingPage() {
                 Run 41-disease ML classification, view vitals trend charts, book appointments, and access lab summaries.
               </p>
             </div>
-            <button
-              onClick={() => handleRoleQuickLogin('patient')}
+            <Link
+              href="/patient/symptom-checker"
               className="w-full py-2.5 rounded-xl bg-mistTeal dark:bg-slate-800 text-tealPrimary font-semibold text-xs flex items-center justify-center gap-1.5 hover:bg-tealPrimary hover:text-white transition-all"
             >
-              <span>Demo Patient Portal</span>
+              <span>Access Symptom Checker</span>
               <ArrowRight className="w-3.5 h-3.5" />
-            </button>
+            </Link>
           </div>
 
           {/* Doctor */}
@@ -135,13 +117,13 @@ export default function LandingPage() {
                 Review patient consultation requests, inspect symptom prediction history, and add clinical notes.
               </p>
             </div>
-            <button
-              onClick={() => handleRoleQuickLogin('doctor')}
+            <Link
+              href="/auth/login"
               className="w-full py-2.5 rounded-xl bg-mistTeal dark:bg-slate-800 text-tealPrimary font-semibold text-xs flex items-center justify-center gap-1.5 hover:bg-tealPrimary hover:text-white transition-all"
             >
-              <span>Demo Doctor Portal</span>
+              <span>Physician Sign In</span>
               <ArrowRight className="w-3.5 h-3.5" />
-            </button>
+            </Link>
           </div>
 
           {/* Lab Tech */}
@@ -155,13 +137,13 @@ export default function LandingPage() {
                 Manage test sample status, upload PDF reports, and trigger automatic LLM report summarization.
               </p>
             </div>
-            <button
-              onClick={() => handleRoleQuickLogin('lab')}
+            <Link
+              href="/auth/login"
               className="w-full py-2.5 rounded-xl bg-purple-50 dark:bg-slate-800 text-purple-600 dark:text-purple-400 font-semibold text-xs flex items-center justify-center gap-1.5 hover:bg-purple-600 hover:text-white transition-all"
             >
-              <span>Demo Lab Portal</span>
+              <span>Lab Portal Sign In</span>
               <ArrowRight className="w-3.5 h-3.5" />
-            </button>
+            </Link>
           </div>
 
           {/* Admin */}
@@ -172,16 +154,16 @@ export default function LandingPage() {
               </div>
               <h3 className="font-heading font-bold text-lg text-ink dark:text-white">Admin Security</h3>
               <p className="text-xs text-inkMuted leading-relaxed">
-                Monitor system metrics, review audit security trail events, and verify environment security state.
+                Monitor system metrics, provision medical staff credentials, and review security audit trails.
               </p>
             </div>
-            <button
-              onClick={() => handleRoleQuickLogin('admin')}
+            <Link
+              href="/auth/login"
               className="w-full py-2.5 rounded-xl bg-amber-50 dark:bg-slate-800 text-amberWarn font-semibold text-xs flex items-center justify-center gap-1.5 hover:bg-amberWarn hover:text-white transition-all"
             >
-              <span>Admin Security Portal</span>
+              <span>Admin Sign In</span>
               <ArrowRight className="w-3.5 h-3.5" />
-            </button>
+            </Link>
           </div>
         </div>
       </section>

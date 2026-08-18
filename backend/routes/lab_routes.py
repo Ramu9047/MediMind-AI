@@ -3,14 +3,17 @@ from datetime import datetime
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from models import LabTestCreate, LabTestResponse, LabTestStatus, UserRole
-from auth import get_current_user
+from auth import get_current_user, require_role
 from database import get_database
 from services.report_service import process_lab_report_file
 
 router = APIRouter(prefix="/labs", tags=["Lab Tests & Diagnostic Reports"])
 
 @router.post("/book", response_model=LabTestResponse)
-async def book_lab_test(test_in: LabTestCreate, current_user: dict = Depends(get_current_user)):
+async def book_lab_test(
+    test_in: LabTestCreate,
+    current_user: dict = Depends(require_role([UserRole.PATIENT]))
+):
     db = get_database()
     test_id = str(uuid.uuid4())
 
@@ -77,7 +80,11 @@ async def get_my_lab_tests(current_user: dict = Depends(get_current_user)):
     return result
 
 @router.put("/{test_id}/status")
-async def update_lab_status(test_id: str, new_status: str, current_user: dict = Depends(get_current_user)):
+async def update_lab_status(
+    test_id: str,
+    new_status: str,
+    current_user: dict = Depends(require_role([UserRole.LAB, UserRole.ADMIN]))
+):
     db = get_database()
     test = await db["lab_tests"].find_one({"_id": test_id})
     if not test:
@@ -93,7 +100,7 @@ async def update_lab_status(test_id: str, new_status: str, current_user: dict = 
 async def upload_lab_report(
     test_id: str,
     file: UploadFile = File(...),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(require_role([UserRole.LAB, UserRole.ADMIN]))
 ):
     db = get_database()
     test = await db["lab_tests"].find_one({"_id": test_id})

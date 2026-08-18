@@ -10,6 +10,16 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 @router.post("/signup", response_model=Token, status_code=status.HTTP_201_CREATED)
 async def signup(user_in: UserCreate):
     db = get_database()
+
+    # Public registration is strictly restricted to Patient accounts
+    if user_in.role and user_in.role.lower() != "patient":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Public registration is restricted to Patient accounts. Doctor, Lab Tech, and Admin accounts must be provisioned by a System Administrator."
+        )
+
+    user_role = "patient"
+
     existing_user = await db["users"].find_one({"email": user_in.email.lower()})
     if existing_user:
         raise HTTPException(
@@ -24,48 +34,44 @@ async def signup(user_in: UserCreate):
         "_id": user_id,
         "email": user_in.email.lower(),
         "name": user_in.name,
-        "role": user_in.role,
+        "role": user_role,
         "hashed_password": hashed_pwd,
         "created_at": datetime.utcnow()
     }
 
-    if user_in.role == "doctor":
-        user_doc["specialization"] = "General Physician"
-
     await db["users"].insert_one(user_doc)
 
-    # Initialize patient profile if patient
-    if user_in.role == "patient":
-        profile_doc = {
-            "_id": str(uuid.uuid4()),
-            "user_id": user_id,
-            "age": 32,
-            "gender": "Other",
-            "blood_type": "O+",
-            "vitals": {
-                "blood_pressure_sys": 120,
-                "blood_pressure_dia": 80,
-                "heart_rate": 72,
-                "glucose_mg_dl": 95,
-                "bmi": 22.5,
-                "weight_kg": 68.0,
-                "height_cm": 175.0
-            },
-            "medical_history": ["Seasonal Allergies (2024)"]
-        }
-        await db["patients"].insert_one(profile_doc)
+    # Initialize patient profile
+    profile_doc = {
+        "_id": str(uuid.uuid4()),
+        "user_id": user_id,
+        "age": 32,
+        "gender": "Other",
+        "blood_type": "O+",
+        "vitals": {
+            "blood_pressure_sys": 120,
+            "blood_pressure_dia": 80,
+            "heart_rate": 72,
+            "glucose_mg_dl": 95,
+            "bmi": 22.5,
+            "weight_kg": 68.0,
+            "height_cm": 175.0
+        },
+        "medical_history": ["New Patient Registration"]
+    }
+    await db["patients"].insert_one(profile_doc)
 
     # Log audit event
     await db["audit_logs"].insert_one({
         "_id": str(uuid.uuid4()),
-        "action": "USER_SIGNUP",
+        "action": "PATIENT_PUBLIC_SIGNUP",
         "user_email": user_in.email,
-        "role": user_in.role,
+        "role": user_role,
         "timestamp": datetime.utcnow()
     })
 
-    token = create_access_token({"sub": user_id, "role": user_in.role})
-    user_resp = UserResponse(id=user_id, email=user_in.email, name=user_in.name, role=user_in.role)
+    token = create_access_token({"sub": user_id, "role": user_role})
+    user_resp = UserResponse(id=user_id, email=user_in.email, name=user_in.name, role=user_role)
     return Token(access_token=token, token_type="bearer", user=user_resp)
 
 @router.post("/login", response_model=Token)

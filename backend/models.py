@@ -146,7 +146,14 @@ class FAQResponse(BaseModel):
     sources: List[Dict[str, str]]
     disclaimer: str
 
-# --- Admin Dashboard Metrics ---
+# --- Admin Dashboard Metrics & Staff Provisioning ---
+class StaffCreate(BaseModel):
+    name: str
+    email: EmailStr
+    password: str
+    role: str  # "doctor" | "lab" | "admin"
+    specialization: Optional[str] = None
+
 class AdminMetrics(BaseModel):
     total_users: int
     total_patients: int
