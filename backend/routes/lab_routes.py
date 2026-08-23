@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from models import LabTestCreate, LabTestResponse, LabTestStatus, UserRole
@@ -24,8 +24,8 @@ async def book_lab_test(
         "test_name": test_in.test_name,
         "status": LabTestStatus.REQUESTED,
         "notes": test_in.notes,
-        "created_at": datetime.utcnow(),
-        "updated_at": datetime.utcnow()
+        "created_at": datetime.now(timezone.utc),
+        "updated_at": datetime.now(timezone.utc)
     }
 
     await db["lab_tests"].insert_one(test_doc)
@@ -38,7 +38,7 @@ async def book_lab_test(
         "title": f"Lab Test Requested: {test_in.test_name}",
         "description": f"Order initiated for {test_in.test_name}. Status: Requested.",
         "status_badge": LabTestStatus.REQUESTED,
-        "timestamp": datetime.utcnow()
+        "timestamp": datetime.now(timezone.utc)
     })
 
     return LabTestResponse(
@@ -74,8 +74,8 @@ async def get_my_lab_tests(current_user: dict = Depends(get_current_user)):
             extracted_text=t.get("extracted_text"),
             ai_summary=t.get("ai_summary"),
             abnormal_flags=t.get("abnormal_flags", []),
-            created_at=t.get("created_at", datetime.utcnow()),
-            updated_at=t.get("updated_at", datetime.utcnow())
+            created_at=t.get("created_at", datetime.now(timezone.utc)),
+            updated_at=t.get("updated_at", datetime.now(timezone.utc))
         ))
     return result
 
@@ -92,7 +92,7 @@ async def update_lab_status(
 
     await db["lab_tests"].update_one(
         {"_id": test_id},
-        {"$set": {"status": new_status, "updated_at": datetime.utcnow()}}
+        {"$set": {"status": new_status, "updated_at": datetime.now(timezone.utc)}}
     )
     return {"message": f"Lab test status updated to {new_status}"}
 
@@ -118,7 +118,7 @@ async def upload_lab_report(
         "extracted_text": report_analysis["extracted_text"],
         "ai_summary": report_analysis["ai_summary"],
         "abnormal_flags": report_analysis["abnormal_flags"],
-        "updated_at": datetime.utcnow()
+        "updated_at": datetime.now(timezone.utc)
     }
 
     await db["lab_tests"].update_one({"_id": test_id}, {"$set": update_payload})
@@ -131,7 +131,7 @@ async def upload_lab_report(
         "title": f"Lab Report Published: {test['test_name']}",
         "description": f"Report '{file.filename}' processed with AI summary: {report_analysis['ai_summary'][:120]}...",
         "status_badge": "Completed",
-        "timestamp": datetime.utcnow(),
+        "timestamp": datetime.now(timezone.utc),
         "details": {
             "test_id": test_id,
             "abnormal_flags": report_analysis["abnormal_flags"]

@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, status, Depends
 from models import UserCreate, UserLogin, Token, UserResponse
 from auth import get_password_hash, verify_password, create_access_token, get_current_user
@@ -36,7 +36,7 @@ async def signup(user_in: UserCreate):
         "name": user_in.name,
         "role": user_role,
         "hashed_password": hashed_pwd,
-        "created_at": datetime.utcnow()
+        "created_at": datetime.now(timezone.utc)
     }
 
     await db["users"].insert_one(user_doc)
@@ -67,7 +67,7 @@ async def signup(user_in: UserCreate):
         "action": "PATIENT_PUBLIC_SIGNUP",
         "user_email": user_in.email,
         "role": user_role,
-        "timestamp": datetime.utcnow()
+        "timestamp": datetime.now(timezone.utc)
     })
 
     token = create_access_token({"sub": user_id, "role": user_role})

@@ -1,4 +1,6 @@
 import os
+import ast
+import joblib
 import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
@@ -8,47 +10,53 @@ import logging
 logger = logging.getLogger("medimind")
 
 SPECIALIST_MAPPING = {
-    'Fungal infection': 'Dermatologist',
-    'Allergy': 'Allergist / Immunologist',
-    'GERD': 'Gastroenterologist',
-    'Chronic cholestasis': 'Hepatologist / Gastroenterologist',
-    'Drug Reaction': 'Dermatologist / Allergist',
-    'Peptic ulcer diseae': 'Gastroenterologist',
-    'AIDS': 'Infectious Disease Specialist',
-    'Diabetes ': 'Endocrinologist',
-    'Gastroenteritis': 'Gastroenterologist',
-    'Bronchial Asthma': 'Pulmonologist',
-    'Hypertension ': 'Cardiologist',
-    'Migraine': 'Neurologist',
-    'Cervical spondylosis': 'Orthopedic Specialist / Neurologist',
-    'Paralysis (brain hemorrhage)': 'Neurologist',
-    'Jaundice': 'Hepatologist / Gastroenterologist',
-    'Malaria': 'Infectious Disease Specialist',
-    'Chicken pox': 'Pediatrician / General Physician',
-    'Dengue': 'Infectious Disease Specialist',
-    'Typhoid': 'Internal Medicine / Infectious Disease',
-    'hepatitis A': 'Hepatologist',
-    'Hepatitis B': 'Hepatologist',
-    'Hepatitis C': 'Hepatologist',
-    'Hepatitis D': 'Hepatologist',
-    'Hepatitis E': 'Hepatologist',
-    'Alcoholic hepatitis': 'Hepatologist',
-    'Tuberculosis': 'Pulmonologist',
-    'Common Cold': 'General Physician',
-    'Pneumonia': 'Pulmonologist',
-    'Dimorphic hemmorhoids(piles)': 'General Surgeon / Proctologist',
-    'Heart attack': 'Cardiologist (Emergency)',
-    'Varicose veins': 'Vascular Surgeon',
-    'Hypothyroidism': 'Endocrinologist',
-    'Hyperthyroidism': 'Endocrinologist',
-    'Hypoglycemia': 'Endocrinologist',
-    'Osteoarthristis': 'Orthopedic Specialist',
-    'Arthritis': 'Rheumatologist',
-    '(vertigo) Paroymsal  Positional Vertigo': 'ENT Specialist / Neurologist',
-    'Acne': 'Dermatologist',
-    'Urinary tract infection': 'Urologist',
-    'Psoriasis': 'Dermatologist',
-    'Impetigo': 'Dermatologist'
+    'fungal infection': 'Dermatologist',
+    'allergy': 'Allergist / Immunologist',
+    'gerd': 'Gastroenterologist',
+    'chronic cholestasis': 'Hepatologist / Gastroenterologist',
+    'drug reaction': 'Dermatologist / Allergist',
+    'peptic ulcer disease': 'Gastroenterologist',
+    'peptic ulcer diseae': 'Gastroenterologist',
+    'aids': 'Infectious Disease Specialist',
+    'diabetes': 'Endocrinologist',
+    'diabetes ': 'Endocrinologist',
+    'gastroenteritis': 'Gastroenterologist',
+    'bronchial asthma': 'Pulmonologist',
+    'hypertension': 'Cardiologist',
+    'hypertension ': 'Cardiologist',
+    'migraine': 'Neurologist',
+    'cervical spondylosis': 'Orthopedic Specialist / Neurologist',
+    'paralysis (brain hemorrhage)': 'Neurologist',
+    'jaundice': 'Hepatologist / Gastroenterologist',
+    'malaria': 'Infectious Disease Specialist',
+    'chicken pox': 'Pediatrician / General Physician',
+    'dengue': 'Infectious Disease Specialist',
+    'typhoid': 'Internal Medicine / Infectious Disease',
+    'hepatitis a': 'Hepatologist',
+    'hepatitis b': 'Hepatologist',
+    'hepatitis c': 'Hepatologist',
+    'hepatitis d': 'Hepatologist',
+    'hepatitis e': 'Hepatologist',
+    'alcoholic hepatitis': 'Hepatologist',
+    'tuberculosis': 'Pulmonologist',
+    'common cold': 'General Physician',
+    'pneumonia': 'Pulmonologist',
+    'dimorphic hemmorhoids(piles)': 'General Surgeon / Proctologist',
+    'dimorphic hemorrhoids(piles)': 'General Surgeon / Proctologist',
+    'heart attack': 'Cardiologist (Emergency)',
+    'varicose veins': 'Vascular Surgeon',
+    'hypothyroidism': 'Endocrinologist',
+    'hyperthyroidism': 'Endocrinologist',
+    'hypoglycemia': 'Endocrinologist',
+    'osteoarthritis': 'Orthopedic Specialist',
+    'osteoarthristis': 'Orthopedic Specialist',
+    'arthritis': 'Rheumatologist',
+    '(vertigo) paroymsal  positional vertigo': 'ENT Specialist / Neurologist',
+    '(vertigo) paroxysmal positional vertigo': 'ENT Specialist / Neurologist',
+    'acne': 'Dermatologist',
+    'urinary tract infection': 'Urologist',
+    'psoriasis': 'Dermatologist',
+    'impetigo': 'Dermatologist'
 }
 
 class DiseasePredictor:
@@ -84,9 +92,16 @@ class DiseasePredictor:
             unique_diseases = np.unique(y)
             self.diseases_list = {idx: dis for idx, dis in enumerate(unique_diseases)}
 
-            # Train classifier model
-            self.model = RandomForestClassifier(n_estimators=100, random_state=42)
-            self.model.fit(X, y)
+            # Load or train model using joblib serialization
+            model_path = os.path.join(self.data_dir, "model.joblib")
+            if os.path.exists(model_path):
+                self.model = joblib.load(model_path)
+                logger.info(f"Loaded pre-trained RandomForest model from {model_path}")
+            else:
+                self.model = RandomForestClassifier(n_estimators=100, random_state=42)
+                self.model.fit(X, y)
+                joblib.dump(self.model, model_path)
+                logger.info(f"Trained & cached RandomForest model to {model_path}")
 
             # Load helper CSV metadata
             self.description_df = pd.read_csv(os.path.join(self.data_dir, "description.csv"))
@@ -156,7 +171,7 @@ class DiseasePredictor:
             if not match.empty:
                 med_raw = match['Medication'].values[0]
                 try:
-                    medications = eval(med_raw) if isinstance(med_raw, str) and med_raw.startswith('[') else [med_raw]
+                    medications = ast.literal_eval(med_raw) if isinstance(med_raw, str) and med_raw.startswith('[') else [med_raw]
                 except Exception:
                     medications = [med_raw]
 
@@ -166,7 +181,7 @@ class DiseasePredictor:
             if not match.empty:
                 diet_raw = match['Diet'].values[0]
                 try:
-                    diets = eval(diet_raw) if isinstance(diet_raw, str) and diet_raw.startswith('[') else [diet_raw]
+                    diets = ast.literal_eval(diet_raw) if isinstance(diet_raw, str) and diet_raw.startswith('[') else [diet_raw]
                 except Exception:
                     diets = [diet_raw]
 
@@ -176,7 +191,7 @@ class DiseasePredictor:
             if not match.empty:
                 workout = match['workout'].tolist()
 
-        specialist = SPECIALIST_MAPPING.get(disease_name, 'General Physician')
+        specialist = SPECIALIST_MAPPING.get(disease_name.strip().lower(), 'General Physician')
 
         risk_level = "Low"
         if confidence > 0.85:

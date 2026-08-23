@@ -275,18 +275,18 @@ export default function SymptomCheckerPage() {
                         strokeWidth="4"
                         fill="transparent"
                         strokeDasharray={163}
-                        strokeDashoffset={163 - (163 * (prediction.confidence || 50)) / 100}
+                        strokeDashoffset={163 - (163 * ((prediction.confidence_score ? prediction.confidence_score * 100 : 50))) / 100}
                         strokeLinecap="round"
                       />
                     </svg>
                     <span className="absolute font-mono text-xs font-bold text-ink dark:text-white">
-                      {(prediction.confidence || 50).toFixed(0)}%
+                      {prediction.confidence_percentage || `${(prediction.confidence_score * 100).toFixed(0)}%`}
                     </span>
                   </div>
                   <div>
                     {getRiskBadge(prediction.risk_level)}
                     <div className="text-[11px] font-mono text-inkMuted mt-1">
-                      Score: <span className="text-tealPrimary font-semibold">{(prediction.confidence || 50).toFixed(1)}%</span>
+                      Score: <span className="text-tealPrimary font-semibold">{prediction.confidence_percentage || `${(prediction.confidence_score * 100).toFixed(1)}%`}</span>
                     </div>
                   </div>
                 </div>
@@ -297,7 +297,7 @@ export default function SymptomCheckerPage() {
                 <AlertTriangle className="w-4 h-4 text-amberWarn shrink-0 mt-0.5" />
                 <div className="leading-relaxed">
                   <strong className="font-semibold block mb-0.5">Educational Statistical Match:</strong>
-                  This pattern match ({prediction.confidence?.toFixed(1)}%) is commonly associated with <strong>{prediction.predicted_disease}</strong>. This is an educational reference, not a confirmed diagnosis.
+                  This pattern match ({prediction.confidence_percentage || `${(prediction.confidence_score * 100).toFixed(1)}%`}) is commonly associated with <strong>{prediction.predicted_disease}</strong>. This is an educational reference, not a confirmed diagnosis.
                 </div>
               </div>
 
@@ -330,7 +330,7 @@ export default function SymptomCheckerPage() {
                   <span>AI Clinical Explanation</span>
                 </h4>
                 <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs text-ink dark:text-slate-200 leading-relaxed space-y-2 whitespace-pre-line">
-                  {prediction.explanation}
+                  {prediction.llm_explanation || prediction.explanation}
                 </div>
               </div>
 
@@ -357,7 +357,7 @@ export default function SymptomCheckerPage() {
                   </h5>
                   <p className="text-[10px] text-inkMuted italic mb-1">Educational reference only, not a prescription</p>
                   <ul className="text-xs text-inkMuted space-y-1 list-disc list-inside font-mono">
-                    {prediction.medications?.map((m: string, idx: number) => (
+                    {(prediction.medications_educational || prediction.medications)?.map((m: string, idx: number) => (
                       <li key={idx}>{m}</li>
                     ))}
                   </ul>

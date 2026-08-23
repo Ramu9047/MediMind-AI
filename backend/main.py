@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -15,36 +16,35 @@ from routes import (
     admin_routes
 )
 
-app = FastAPI(
-    title=settings.PROJECT_NAME,
-    description="Unified AI-assisted Healthcare Coordination Platform connecting Patients, Doctors, and Labs.",
-    version="1.0.0",
-    docs_url="/docs",
-    redoc_url="/redoc"
-)
-
-# CORS Middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-@app.on_event("startup")
-async def startup_event():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     await connect_to_mongo()
-    # Run seed in background to ensure immediate availability
     try:
         from seed_data import seed
         await seed()
     except Exception as e:
         print(f"Startup seed notice: {e}")
-
-@app.on_event("shutdown")
-async def shutdown_event():
+    yield
     await close_mongo_connection()
+
+app = FastAPI(
+    title=settings.PROJECT_NAME,
+    description="Unified AI-assisted Healthcare Coordination Platform connecting Patients, Doctors, and Labs.",
+    version="1.0.0",
+    docs_url="/docs",
+    redoc_url="/redoc",
+    lifespan=lifespan
+)
+
+# Configured CORS Middleware
+allowed_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(",")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allowed_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Include API Routers
 app.include_router(auth_routes.router, prefix=settings.API_V1_STR)

@@ -55,29 +55,32 @@ export default function Navbar() {
         </Link>
 
         {/* Dynamic Navigation */}
-        <nav className="hidden md:flex items-center gap-1 text-sm font-medium">
+        <nav className="hidden md:flex items-center gap-1 lg:gap-2 text-xs sm:text-sm font-medium overflow-x-auto no-scrollbar py-1">
           <Link
             href="/"
-            className={`px-3 py-1.5 rounded-lg transition-colors ${
+            className={`px-2.5 py-1.5 rounded-xl transition-all whitespace-nowrap shrink-0 ${
               pathname === '/'
-                ? 'bg-mistTeal dark:bg-slate-800 text-tealPrimary dark:text-teal-400 font-semibold'
+                ? 'bg-mistTeal dark:bg-slate-800 text-tealPrimary dark:text-teal-400 font-bold shadow-xs'
                 : 'text-inkMuted hover:text-ink dark:hover:text-white'
             }`}
           >
             Overview
           </Link>
 
-          <Link
-            href="/patient/symptom-checker"
-            className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${
-              pathname.includes('/symptom-checker')
-                ? 'bg-mistTeal dark:bg-slate-800 text-tealPrimary dark:text-teal-400 font-semibold'
-                : 'text-inkMuted hover:text-ink dark:hover:text-white'
-            }`}
-          >
-            <Activity className="w-4 h-4 text-tealPrimary" />
-            <span>Symptom Evaluator</span>
-          </Link>
+          {/* Patient Symptom Checker Link - Only shown for patients or unauthenticated visitors */}
+          {(!user || user.role === 'patient') && (
+            <Link
+              href="/patient/symptom-checker"
+              className={`px-2.5 py-1.5 rounded-xl transition-all whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
+                pathname.includes('/symptom-checker')
+                  ? 'bg-mistTeal dark:bg-slate-800 text-tealPrimary dark:text-teal-400 font-bold shadow-xs'
+                  : 'text-inkMuted hover:text-ink dark:hover:text-white'
+              }`}
+            >
+              <Activity className="w-3.5 h-3.5 text-tealPrimary" />
+              <span>Symptom Evaluator</span>
+            </Link>
+          )}
 
           {user && (
             <>
@@ -85,24 +88,46 @@ export default function Navbar() {
                 <>
                   <Link
                     href="/patient/dashboard"
-                    className={`px-3 py-1.5 rounded-lg transition-colors ${
+                    className={`px-2.5 py-1.5 rounded-xl transition-all whitespace-nowrap shrink-0 ${
                       pathname === '/patient/dashboard'
-                        ? 'bg-mistTeal dark:bg-slate-800 text-tealPrimary dark:text-teal-400 font-semibold'
+                        ? 'bg-mistTeal dark:bg-slate-800 text-tealPrimary dark:text-teal-400 font-bold shadow-xs'
                         : 'text-inkMuted hover:text-ink dark:hover:text-white'
                     }`}
                   >
-                    Vitals & Portal
+                    Vitals & Timeline
                   </Link>
                   <Link
                     href="/patient/appointments"
-                    className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1 ${
+                    className={`px-2.5 py-1.5 rounded-xl transition-all whitespace-nowrap shrink-0 flex items-center gap-1 ${
                       pathname === '/patient/appointments'
-                        ? 'bg-mistTeal dark:bg-slate-800 text-tealPrimary dark:text-teal-400 font-semibold'
+                        ? 'bg-mistTeal dark:bg-slate-800 text-tealPrimary dark:text-teal-400 font-bold shadow-xs'
                         : 'text-inkMuted hover:text-ink dark:hover:text-white'
                     }`}
                   >
                     <Calendar className="w-3.5 h-3.5" />
                     <span>Appointments</span>
+                  </Link>
+                  <Link
+                    href="/patient/lab-tests"
+                    className={`px-2.5 py-1.5 rounded-xl transition-all whitespace-nowrap shrink-0 flex items-center gap-1 ${
+                      pathname === '/patient/lab-tests'
+                        ? 'bg-mistTeal dark:bg-slate-800 text-tealPrimary dark:text-teal-400 font-bold shadow-xs'
+                        : 'text-inkMuted hover:text-ink dark:hover:text-white'
+                    }`}
+                  >
+                    <FlaskConical className="w-3.5 h-3.5" />
+                    <span>Lab Orders</span>
+                  </Link>
+                  <Link
+                    href="/patient/history"
+                    className={`px-2.5 py-1.5 rounded-xl transition-all whitespace-nowrap shrink-0 flex items-center gap-1 ${
+                      pathname === '/patient/history'
+                        ? 'bg-mistTeal dark:bg-slate-800 text-tealPrimary dark:text-teal-400 font-bold shadow-xs'
+                        : 'text-inkMuted hover:text-ink dark:hover:text-white'
+                    }`}
+                  >
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>Medical History</span>
                   </Link>
                 </>
               )}
@@ -110,39 +135,42 @@ export default function Navbar() {
               {user.role === 'doctor' && (
                 <Link
                   href="/doctor/dashboard"
-                  className={`px-3 py-1.5 rounded-lg transition-colors ${
+                  className={`px-2.5 py-1.5 rounded-xl transition-all whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
                     pathname.includes('/doctor')
-                      ? 'bg-mistTeal dark:bg-slate-800 text-tealPrimary dark:text-teal-400 font-semibold'
+                      ? 'bg-mistTeal dark:bg-slate-800 text-tealPrimary dark:text-teal-400 font-bold shadow-xs'
                       : 'text-inkMuted hover:text-ink dark:hover:text-white'
                   }`}
                 >
-                  Doctor Consult Queue
+                  <Stethoscope className="w-3.5 h-3.5 text-tealPrimary" />
+                  <span>Physician Consult Queue</span>
                 </Link>
               )}
 
               {user.role === 'lab' && (
                 <Link
                   href="/lab/dashboard"
-                  className={`px-3 py-1.5 rounded-lg transition-colors ${
+                  className={`px-2.5 py-1.5 rounded-xl transition-all whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
                     pathname.includes('/lab')
-                      ? 'bg-mistTeal dark:bg-slate-800 text-tealPrimary dark:text-teal-400 font-semibold'
+                      ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400 font-bold shadow-xs'
                       : 'text-inkMuted hover:text-ink dark:hover:text-white'
                   }`}
                 >
-                  Lab Diagnostic Portal
+                  <FlaskConical className="w-3.5 h-3.5 text-purple-600" />
+                  <span>Lab Diagnostic Portal</span>
                 </Link>
               )}
 
               {user.role === 'admin' && (
                 <Link
                   href="/admin/dashboard"
-                  className={`px-3 py-1.5 rounded-lg transition-colors ${
+                  className={`px-2.5 py-1.5 rounded-xl transition-all whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
                     pathname.includes('/admin')
-                      ? 'bg-mistTeal dark:bg-slate-800 text-tealPrimary dark:text-teal-400 font-semibold'
+                      ? 'bg-amber-500/10 text-amberWarn font-bold shadow-xs'
                       : 'text-inkMuted hover:text-ink dark:hover:text-white'
                   }`}
                 >
-                  Admin Security
+                  <ShieldCheck className="w-3.5 h-3.5 text-amberWarn" />
+                  <span>Admin Security & Staff Provisioning</span>
                 </Link>
               )}
             </>
@@ -150,9 +178,9 @@ export default function Navbar() {
 
           <Link
             href="/faq"
-            className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1 ${
+            className={`px-2.5 py-1.5 rounded-xl transition-all whitespace-nowrap shrink-0 flex items-center gap-1 ${
               pathname === '/faq'
-                ? 'bg-mistTeal dark:bg-slate-800 text-tealPrimary dark:text-teal-400 font-semibold'
+                ? 'bg-mistTeal dark:bg-slate-800 text-tealPrimary dark:text-teal-400 font-bold shadow-xs'
                 : 'text-inkMuted hover:text-ink dark:hover:text-white'
             }`}
           >

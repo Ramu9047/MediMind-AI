@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional, Any, Dict
 from pydantic import BaseModel, EmailStr, Field
 
@@ -24,7 +24,7 @@ class UserLogin(BaseModel):
 class UserResponse(UserBase):
     id: str
     specialization: Optional[str] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class Token(BaseModel):
     access_token: str
@@ -71,7 +71,7 @@ class PredictionResult(BaseModel):
     workout_recommendations: List[str]
     llm_explanation: str
     disclaimer: str
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 # --- Appointment Booking Models ---
 class AppointmentStatus:
@@ -99,7 +99,7 @@ class AppointmentResponse(BaseModel):
     reason: str
     status: str = AppointmentStatus.PENDING
     prediction_summary: Optional[Dict[str, Any]] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 # --- Lab Test & Report Models ---
 class LabTestStatus:
@@ -123,8 +123,8 @@ class LabTestResponse(BaseModel):
     extracted_text: Optional[str] = None
     ai_summary: Optional[str] = None
     abnormal_flags: List[str] = []
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 # --- Medical Timeline Entry ---
 class TimelineEntry(BaseModel):
@@ -134,7 +134,7 @@ class TimelineEntry(BaseModel):
     title: str
     description: str
     status_badge: str
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     details: Optional[Dict[str, Any]] = None
 
 # --- FAQ Assistant Models ---

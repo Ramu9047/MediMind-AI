@@ -68,6 +68,12 @@ async def list_all_patients(current_user: dict = Depends(get_current_user)):
 
 @router.get("/{patient_id}/record")
 async def get_patient_full_record(patient_id: str, current_user: dict = Depends(get_current_user)):
+    if current_user["_id"] != patient_id and current_user.get("role") not in [UserRole.DOCTOR, UserRole.ADMIN]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access forbidden: You do not have permission to view this medical record."
+        )
+
     db = get_database()
     user = await db["users"].find_one({"_id": patient_id})
     if not user:

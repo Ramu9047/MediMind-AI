@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, status
 from models import SymptomInput, PredictionResult
 from services.ml_service import ml_predictor
@@ -48,7 +48,7 @@ async def check_symptoms(symptom_in: SymptomInput, current_user: dict = Depends(
         workout_recommendations=raw_pred["workout_recommendations"],
         llm_explanation=llm_explanation,
         disclaimer=settings.MEDICAL_DISCLAIMER,
-        created_at=datetime.utcnow()
+        created_at=datetime.now(timezone.utc)
     )
 
     db = get_database()
@@ -63,7 +63,7 @@ async def check_symptoms(symptom_in: SymptomInput, current_user: dict = Depends(
         "title": f"AI Symptom Check: {raw_pred['predicted_disease']}",
         "description": f"Symptoms evaluated: {', '.join(symptom_in.symptoms)}. AI suggested consultation with a {raw_pred['recommended_specialist']}.",
         "status_badge": "Completed",
-        "timestamp": datetime.utcnow(),
+        "timestamp": datetime.now(timezone.utc),
         "details": {"prediction_id": pred_id, "risk_level": raw_pred["risk_level"]}
     }
     await db["timeline"].insert_one(timeline_entry)

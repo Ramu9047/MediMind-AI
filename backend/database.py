@@ -13,7 +13,7 @@ db_wrapper = Database()
 
 async def connect_to_mongo():
     try:
-        db_wrapper.client = AsyncIOMotorClient(settings.MONGODB_URI, serverSelectionTimeoutMS=2000)
+        db_wrapper.client = AsyncIOMotorClient(settings.MONGODB_URI, serverSelectionTimeoutMS=5000)
         # Test connection
         await db_wrapper.client.admin.command('ping')
         db_wrapper.db = db_wrapper.client[settings.DATABASE_NAME]

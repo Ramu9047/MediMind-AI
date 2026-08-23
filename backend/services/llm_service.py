@@ -42,7 +42,7 @@ async def call_llm_api(system_prompt: str, user_prompt: str) -> str:
                         "Content-Type": "application/json"
                     },
                     json={
-                        "model": "gpt-3.5-turbo",
+                        "model": "gpt-4o-mini",
                         "messages": [
                             {"role": "system", "content": system_prompt},
                             {"role": "user", "content": user_prompt}

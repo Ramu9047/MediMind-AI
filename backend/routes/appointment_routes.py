@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, status
 from models import AppointmentCreate, AppointmentResponse, AppointmentStatus, UserRole
 from auth import get_current_user, require_role
@@ -41,7 +41,7 @@ async def book_appointment(
     # Validate date is not in the past
     try:
         appt_date_obj = datetime.strptime(appt_in.appointment_date, "%Y-%m-%d").date()
-        if appt_date_obj < datetime.utcnow().date():
+        if appt_date_obj < datetime.now(timezone.utc).date():
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Cannot book appointments for past dates."
@@ -88,7 +88,7 @@ async def book_appointment(
         "reason": appt_in.reason,
         "status": AppointmentStatus.PENDING,
         "prediction_summary": prediction_summary,
-        "created_at": datetime.utcnow()
+        "created_at": datetime.now(timezone.utc)
     }
 
     await db["appointments"].insert_one(appt_doc)
@@ -101,7 +101,7 @@ async def book_appointment(
         "title": f"Appointment Booked: Dr. {appt_in.doctor_name}",
         "description": f"Scheduled for {appt_in.appointment_date} at {appt_in.appointment_time}. Reason: {appt_in.reason}",
         "status_badge": AppointmentStatus.PENDING,
-        "timestamp": datetime.utcnow()
+        "timestamp": datetime.now(timezone.utc)
     })
 
     return AppointmentResponse(
@@ -140,7 +140,7 @@ async def get_my_appointments(current_user: dict = Depends(get_current_user)):
             reason=a["reason"],
             status=a.get("status", AppointmentStatus.PENDING),
             prediction_summary=a.get("prediction_summary"),
-            created_at=a.get("created_at", datetime.utcnow())
+            created_at=a.get("created_at", datetime.now(timezone.utc))
         ))
     return result
 

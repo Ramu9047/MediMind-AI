@@ -16,7 +16,7 @@ export default function AdminDashboardPage() {
   const [staffName, setStaffName] = useState('');
   const [staffEmail, setStaffEmail] = useState('');
   const [staffPassword, setStaffPassword] = useState('');
-  const [staffRole, setStaffRole] = useState<'doctor' | 'lab' | 'admin'>('doctor');
+  const [staffRole, setStaffRole] = useState<'doctor' | 'lab'>('doctor');
   const [staffSpec, setStaffSpec] = useState('');
   const [staffMsg, setStaffMsg] = useState('');
   const [staffErr, setStaffErr] = useState('');
@@ -212,7 +212,6 @@ export default function AdminDashboardPage() {
             >
               <option value="doctor">Doctor (Physician Portal)</option>
               <option value="lab">Lab Technician (Laboratory Portal)</option>
-              <option value="admin">System Administrator</option>
             </select>
           </div>
 

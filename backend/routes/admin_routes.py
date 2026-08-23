@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, status
 from models import AdminMetrics, StaffCreate, UserRole
 from auth import get_current_user, get_password_hash, require_role
@@ -26,14 +26,14 @@ async def get_admin_metrics(current_user: dict = Depends(require_role([UserRole.
         audit_logs.append({
             "action": log.get("action", "SYSTEM_EVENT"),
             "user": log.get("user_email", "System"),
-            "timestamp": str(log.get("timestamp", datetime.utcnow().isoformat()))
+            "timestamp": str(log.get("timestamp", datetime.now(timezone.utc).isoformat()))
         })
 
     if not audit_logs:
         audit_logs = [
-            {"action": "SECURITY_AUDIT_PASS", "user": "security@medimind.ai", "timestamp": datetime.utcnow().isoformat()},
-            {"action": "JWT_TOKEN_SECRET_VERIFIED", "user": "system", "timestamp": datetime.utcnow().isoformat()},
-            {"action": "RATE_LIMITER_ACTIVE", "user": "system", "timestamp": datetime.utcnow().isoformat()}
+            {"action": "SECURITY_AUDIT_PASS", "user": "security@medimind.ai", "timestamp": datetime.now(timezone.utc).isoformat()},
+            {"action": "JWT_TOKEN_SECRET_VERIFIED", "user": "system", "timestamp": datetime.now(timezone.utc).isoformat()},
+            {"action": "RATE_LIMITER_ACTIVE", "user": "system", "timestamp": datetime.now(timezone.utc).isoformat()}
         ]
 
     return AdminMetrics(
@@ -53,10 +53,10 @@ async def create_staff_account(
     staff_in: StaffCreate,
     current_user: dict = Depends(require_role([UserRole.ADMIN]))
 ):
-    if staff_in.role.lower() not in [UserRole.DOCTOR, UserRole.LAB, UserRole.ADMIN]:
+    if staff_in.role.lower() not in [UserRole.DOCTOR, UserRole.LAB]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Role must be 'doctor', 'lab', or 'admin'."
+            detail="Staff provisioning via web UI is restricted to Doctor and Lab Technician roles. System Administrator accounts must be seeded via environment configuration."
         )
 
     db = get_database()
@@ -76,7 +76,7 @@ async def create_staff_account(
         "name": staff_in.name,
         "role": staff_in.role.lower(),
         "hashed_password": hashed_pwd,
-        "created_at": datetime.utcnow()
+        "created_at": datetime.now(timezone.utc)
     }
     if staff_in.role.lower() == UserRole.DOCTOR:
         user_doc["specialization"] = staff_in.specialization or "General Physician"
@@ -87,7 +87,7 @@ async def create_staff_account(
         "_id": str(uuid.uuid4()),
         "action": f"STAFF_PROVISIONED_{staff_in.role.upper()}",
         "user_email": staff_in.email.lower(),
-        "timestamp": datetime.utcnow()
+        "timestamp": datetime.now(timezone.utc)
     })
 
     return {
