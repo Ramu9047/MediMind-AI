@@ -145,7 +145,7 @@ function LabTestsContent() {
                   <div className="flex items-center justify-between">
                     <div>
                       <h4 className="text-sm font-heading font-bold text-ink dark:text-white">{lab.test_name}</h4>
-                      <p className="text-xs text-inkMuted">Order ID: {lab.id.slice(0, 8)}</p>
+                      <p className="text-xs text-inkMuted font-mono">Order ID: {lab.id}</p>
                     </div>
                     <span className="px-2.5 py-1 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 text-xs font-mono font-semibold border border-purple-500/30">
                       {lab.status}

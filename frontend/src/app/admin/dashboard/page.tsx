@@ -3,14 +3,18 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { fetchApi } from '@/lib/api';
-import { ShieldAlert, ShieldCheck, Lock, Activity, Users, FileText, CalendarCheck, UserPlus, Stethoscope, FlaskConical } from 'lucide-react';
-
+import { ShieldAlert, ShieldCheck, Lock, Activity, Users, FileText, CalendarCheck, UserPlus, ChevronLeft, ChevronRight } from 'lucide-react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 
 export default function AdminDashboardPage() {
   const { user } = useAuth();
   const [metrics, setMetrics] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+
+  // Paginated Audit Log state
+  const [auditData, setAuditData] = useState<any>(null);
+  const [auditPage, setAuditPage] = useState(1);
+  const [auditLoading, setAuditLoading] = useState(false);
 
   // Staff provisioning state
   const [staffName, setStaffName] = useState('');
@@ -29,9 +33,18 @@ export default function AdminDashboardPage() {
       .finally(() => setLoading(false));
   };
 
+  const fetchAuditEvents = (page: number) => {
+    setAuditLoading(true);
+    fetchApi(`/admin/audit-events?page=${page}&limit=10`)
+      .then((data) => setAuditData(data))
+      .catch(() => {})
+      .finally(() => setAuditLoading(false));
+  };
+
   useEffect(() => {
     fetchMetrics();
-  }, []);
+    fetchAuditEvents(auditPage);
+  }, [auditPage]);
 
   const handleCreateStaff = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,6 +68,7 @@ export default function AdminDashboardPage() {
       setStaffEmail('');
       setStaffPassword('');
       fetchMetrics();
+      fetchAuditEvents(1);
     } catch (err: any) {
       setStaffErr(err.message || 'Failed to provision staff account.');
     } finally {
@@ -94,7 +108,7 @@ export default function AdminDashboardPage() {
       <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs font-mono">
         <div className="flex items-center gap-2 text-ink dark:text-amber-300">
           <ShieldCheck className="w-4 h-4 text-tealPrimary shrink-0" />
-          <span>Env-Based JWT Secret Verification</span>
+          <span>Real-Time Per-User Audit Logging</span>
         </div>
         <div className="flex items-center gap-2 text-ink dark:text-amber-300">
           <ShieldCheck className="w-4 h-4 text-tealPrimary shrink-0" />
@@ -102,11 +116,11 @@ export default function AdminDashboardPage() {
         </div>
         <div className="flex items-center gap-2 text-ink dark:text-amber-300">
           <ShieldCheck className="w-4 h-4 text-tealPrimary shrink-0" />
-          <span>Admin-Only Staff Account Provisioning</span>
+          <span>Forced Temporary Staff Password Reset</span>
         </div>
       </div>
 
-      {/* METRICS METRIC CARDS */}
+      {/* METRIC CARDS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         
         <div className="clinical-card p-5 space-y-1">
@@ -192,7 +206,7 @@ export default function AdminDashboardPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-mono font-semibold uppercase text-inkMuted mb-1">Temporary Password</label>
+            <label className="block text-xs font-mono font-semibold uppercase text-inkMuted mb-1">Temporary Password (Forces Reset)</label>
             <input
               type="password"
               required
@@ -240,33 +254,83 @@ export default function AdminDashboardPage() {
         </form>
       </div>
 
-      {/* SECURITY AUDIT LOG TABLE */}
+      {/* SECURITY AUDIT LOG TABLE (PAGINATED) */}
       <div className="clinical-card p-6 space-y-4">
-        <h3 className="text-base font-heading font-bold text-ink dark:text-white flex items-center gap-2">
-          <Lock className="w-5 h-5 text-amberWarn" />
-          <span>Security Audit Trail & Operational Events</span>
-        </h3>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-ink dark:text-slate-300">
-            <thead className="bg-slate-100 dark:bg-slate-900 text-inkMuted uppercase text-[10px] font-mono tracking-wider">
-              <tr>
-                <th className="p-3 rounded-l-xl">Action Event</th>
-                <th className="p-3">User / Identity</th>
-                <th className="p-3 rounded-r-xl">Timestamp</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-              {metrics.security_audits.map((log: any, idx: number) => (
-                <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-900/40">
-                  <td className="p-3 font-mono font-semibold text-tealPrimary">{log.action}</td>
-                  <td className="p-3 text-ink dark:text-slate-300">{log.user}</td>
-                  <td className="p-3 text-inkMuted">{new Date(log.timestamp).toLocaleString()}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="flex items-center justify-between">
+          <h3 className="text-base font-heading font-bold text-ink dark:text-white flex items-center gap-2">
+            <Lock className="w-5 h-5 text-amberWarn" />
+            <span>Per-User Security Audit Trail (Paginated)</span>
+          </h3>
+          {auditData && (
+            <span className="text-xs font-mono text-inkMuted">
+              Total Events: <span className="text-tealPrimary font-bold">{auditData.total}</span>
+            </span>
+          )}
         </div>
+
+        {auditLoading ? (
+          <div className="py-8 text-center text-xs text-inkMuted italic">Loading audit events page...</div>
+        ) : auditData && auditData.events.length > 0 ? (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs text-ink dark:text-slate-300">
+                <thead className="bg-slate-100 dark:bg-slate-900 text-inkMuted uppercase text-[10px] font-mono tracking-wider">
+                  <tr>
+                    <th className="p-3 rounded-l-xl">Action Event</th>
+                    <th className="p-3">Actor / Email</th>
+                    <th className="p-3">Role</th>
+                    <th className="p-3">Status</th>
+                    <th className="p-3 rounded-r-xl">Timestamp</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+                  {auditData.events.map((log: any) => (
+                    <tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/40">
+                      <td className="p-3 font-mono font-semibold text-tealPrimary">{log.action}</td>
+                      <td className="p-3 text-ink dark:text-slate-300 font-mono">{log.user_email}</td>
+                      <td className="p-3 capitalize">{log.role}</td>
+                      <td className="p-3 font-mono">
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          log.status_code < 300 ? 'bg-teal-500/10 text-tealPrimary' : 'bg-rose-500/10 text-dangerRed'
+                        }`}>
+                          {log.status_code}
+                        </span>
+                      </td>
+                      <td className="p-3 text-inkMuted font-mono">{new Date(log.timestamp).toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination Controls */}
+            <div className="flex items-center justify-between pt-4 border-t border-slate-200 dark:border-slate-800">
+              <button
+                disabled={auditPage <= 1}
+                onClick={() => setAuditPage(auditPage - 1)}
+                className="btn-outline text-xs py-1.5 px-3 flex items-center gap-1 disabled:opacity-40"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                <span>Previous</span>
+              </button>
+
+              <span className="text-xs font-mono text-inkMuted">
+                Page <span className="text-ink dark:text-white font-bold">{auditData.page}</span> of {auditData.total_pages}
+              </span>
+
+              <button
+                disabled={auditPage >= auditData.total_pages}
+                onClick={() => setAuditPage(auditPage + 1)}
+                className="btn-outline text-xs py-1.5 px-3 flex items-center gap-1 disabled:opacity-40"
+              >
+                <span>Next</span>
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </>
+        ) : (
+          <div className="p-6 text-center text-xs text-inkMuted">No audit events recorded yet.</div>
+        )}
       </div>
 
     </div>

@@ -20,7 +20,16 @@ export async function fetchApi<T = any>(endpoint: string, options: RequestInit =
     headers,
   });
 
+  if (response.status === 401 && typeof window !== 'undefined') {
+    localStorage.removeItem('medimind_token');
+    localStorage.removeItem('medimind_user');
+    if (!window.location.pathname.includes('/auth/login')) {
+      window.location.href = '/auth/login?expired=true';
+    }
+  }
+
   if (!response.ok) {
+
     let errorDetail = 'An unexpected error occurred';
     try {
       const data = await response.json();

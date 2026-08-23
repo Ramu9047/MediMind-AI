@@ -129,21 +129,45 @@ export default function Navbar() {
                     <Clock className="w-3.5 h-3.5" />
                     <span>Medical History</span>
                   </Link>
+                  <Link
+                    href="/medicine-hub"
+                    className={`px-2.5 py-1.5 rounded-xl transition-all whitespace-nowrap shrink-0 flex items-center gap-1 ${
+                      pathname.includes('/medicine-hub')
+                        ? 'bg-mistTeal dark:bg-slate-800 text-tealPrimary dark:text-teal-400 font-bold shadow-xs'
+                        : 'text-inkMuted hover:text-ink dark:hover:text-white'
+                    }`}
+                  >
+                    <Activity className="w-3.5 h-3.5 text-blue-500" />
+                    <span>Medicine Hub</span>
+                  </Link>
                 </>
               )}
 
               {user.role === 'doctor' && (
-                <Link
-                  href="/doctor/dashboard"
-                  className={`px-2.5 py-1.5 rounded-xl transition-all whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
-                    pathname.includes('/doctor')
-                      ? 'bg-mistTeal dark:bg-slate-800 text-tealPrimary dark:text-teal-400 font-bold shadow-xs'
-                      : 'text-inkMuted hover:text-ink dark:hover:text-white'
-                  }`}
-                >
-                  <Stethoscope className="w-3.5 h-3.5 text-tealPrimary" />
-                  <span>Physician Consult Queue</span>
-                </Link>
+                <>
+                  <Link
+                    href="/doctor/dashboard"
+                    className={`px-2.5 py-1.5 rounded-xl transition-all whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
+                      pathname.includes('/doctor')
+                        ? 'bg-mistTeal dark:bg-slate-800 text-tealPrimary dark:text-teal-400 font-bold shadow-xs'
+                        : 'text-inkMuted hover:text-ink dark:hover:text-white'
+                    }`}
+                  >
+                    <Stethoscope className="w-3.5 h-3.5 text-tealPrimary" />
+                    <span>Physician Consult Queue</span>
+                  </Link>
+                  <Link
+                    href="/medicine-hub"
+                    className={`px-2.5 py-1.5 rounded-xl transition-all whitespace-nowrap shrink-0 flex items-center gap-1 ${
+                      pathname.includes('/medicine-hub')
+                        ? 'bg-mistTeal dark:bg-slate-800 text-tealPrimary dark:text-teal-400 font-bold shadow-xs'
+                        : 'text-inkMuted hover:text-ink dark:hover:text-white'
+                    }`}
+                  >
+                    <Activity className="w-3.5 h-3.5 text-blue-500" />
+                    <span>Medicine Hub</span>
+                  </Link>
+                </>
               )}
 
               {user.role === 'lab' && (

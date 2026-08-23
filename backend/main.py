@@ -9,11 +9,13 @@ from database import connect_to_mongo, close_mongo_connection
 from routes import (
     auth_routes,
     prediction_routes,
+    symptom_nlp_routes,
     appointment_routes,
     lab_routes,
     patient_routes,
     faq_routes,
-    admin_routes
+    admin_routes,
+    medicine_routes
 )
 
 @asynccontextmanager
@@ -30,17 +32,17 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title=settings.PROJECT_NAME,
     description="Unified AI-assisted Healthcare Coordination Platform connecting Patients, Doctors, and Labs.",
-    version="1.0.0",
+    version="1.1.0",
     docs_url="/docs",
     redoc_url="/redoc",
     lifespan=lifespan
 )
 
 # Configured CORS Middleware
-allowed_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(",")
+allowed_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000,*").split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -49,11 +51,13 @@ app.add_middleware(
 # Include API Routers
 app.include_router(auth_routes.router, prefix=settings.API_V1_STR)
 app.include_router(prediction_routes.router, prefix=settings.API_V1_STR)
+app.include_router(symptom_nlp_routes.router, prefix=settings.API_V1_STR)
 app.include_router(appointment_routes.router, prefix=settings.API_V1_STR)
 app.include_router(lab_routes.router, prefix=settings.API_V1_STR)
 app.include_router(patient_routes.router, prefix=settings.API_V1_STR)
 app.include_router(faq_routes.router, prefix=settings.API_V1_STR)
 app.include_router(admin_routes.router, prefix=settings.API_V1_STR)
+app.include_router(medicine_routes.router, prefix=settings.API_V1_STR)
 
 @app.get("/")
 async def root():

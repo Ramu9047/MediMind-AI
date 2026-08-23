@@ -1,9 +1,10 @@
 import uuid
 from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, status, Depends
-from models import UserCreate, UserLogin, Token, UserResponse
+from models import UserCreate, UserLogin, Token, UserResponse, PasswordResetRequest
 from auth import get_password_hash, verify_password, create_access_token, get_current_user
 from database import get_database
+from services.audit_service import log_audit_event
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -13,6 +14,13 @@ async def signup(user_in: UserCreate):
 
     # Public registration is strictly restricted to Patient accounts
     if user_in.role and user_in.role.lower() != "patient":
+        await log_audit_event(
+            action="SIGNUP_BLOCKED_NON_PATIENT",
+            user_email=user_in.email.lower(),
+            role=user_in.role,
+            status_code=400,
+            details={"attempted_role": user_in.role}
+        )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Public registration is restricted to Patient accounts. Doctor, Lab Tech, and Admin accounts must be provisioned by a System Administrator."
@@ -22,6 +30,13 @@ async def signup(user_in: UserCreate):
 
     existing_user = await db["users"].find_one({"email": user_in.email.lower()})
     if existing_user:
+        await log_audit_event(
+            action="SIGNUP_DUPLICATE_EMAIL",
+            user_email=user_in.email.lower(),
+            role=user_role,
+            status_code=400,
+            details={"reason": "Email already registered"}
+        )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="An account with this email address already exists."
@@ -36,6 +51,7 @@ async def signup(user_in: UserCreate):
         "name": user_in.name,
         "role": user_role,
         "hashed_password": hashed_pwd,
+        "must_reset_password": False,
         "created_at": datetime.now(timezone.utc)
     }
 
@@ -61,34 +77,52 @@ async def signup(user_in: UserCreate):
     }
     await db["patients"].insert_one(profile_doc)
 
-    # Log audit event
-    await db["audit_logs"].insert_one({
-        "_id": str(uuid.uuid4()),
-        "action": "PATIENT_PUBLIC_SIGNUP",
-        "user_email": user_in.email,
-        "role": user_role,
-        "timestamp": datetime.now(timezone.utc)
-    })
+    await log_audit_event(
+        action="PATIENT_PUBLIC_SIGNUP",
+        user_email=user_in.email.lower(),
+        role=user_role,
+        status_code=201,
+        details={"user_id": user_id}
+    )
 
     token = create_access_token({"sub": user_id, "role": user_role})
-    user_resp = UserResponse(id=user_id, email=user_in.email, name=user_in.name, role=user_role)
-    return Token(access_token=token, token_type="bearer", user=user_resp)
+    user_resp = UserResponse(
+        id=user_id,
+        email=user_in.email.lower(),
+        name=user_in.name,
+        role=user_role,
+        must_reset_password=False
+    )
+    return Token(access_token=token, token_type="bearer", must_reset_password=False, user=user_resp)
 
 @router.post("/login", response_model=Token)
 async def login(credentials: UserLogin):
     db = get_database()
-    user = await db["users"].find_one({"email": credentials.email.lower()})
-    if not user:
+    email_clean = credentials.email.lower()
+    user = await db["users"].find_one({"email": email_clean})
+
+    if not user or not verify_password(credentials.password, user.get("hashed_password", "")):
+        await log_audit_event(
+            action="LOGIN_FAILED",
+            user_email=email_clean,
+            role="unknown",
+            status_code=401,
+            details={"email_attempted": email_clean, "reason": "Invalid credentials"}
+        )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password"
         )
 
-    if not verify_password(credentials.password, user.get("hashed_password", "")):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid email or password"
-        )
+    must_reset = bool(user.get("must_reset_password", False))
+
+    await log_audit_event(
+        action="LOGIN_SUCCESS",
+        user_email=email_clean,
+        role=user["role"],
+        status_code=200,
+        details={"user_id": user["_id"], "must_reset_password": must_reset}
+    )
 
     token = create_access_token({"sub": user["_id"], "role": user["role"]})
     user_resp = UserResponse(
@@ -96,9 +130,45 @@ async def login(credentials: UserLogin):
         email=user["email"],
         name=user["name"],
         role=user["role"],
-        specialization=user.get("specialization")
+        specialization=user.get("specialization"),
+        must_reset_password=must_reset
     )
-    return Token(access_token=token, token_type="bearer", user=user_resp)
+    return Token(access_token=token, token_type="bearer", must_reset_password=must_reset, user=user_resp)
+
+@router.post("/reset-password")
+async def reset_password(
+    reset_in: PasswordResetRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    db = get_database()
+    if not verify_password(reset_in.current_password, current_user.get("hashed_password", "")):
+        await log_audit_event(
+            action="PASSWORD_RESET_FAILED",
+            user_email=current_user["email"],
+            role=current_user["role"],
+            status_code=400,
+            details={"reason": "Incorrect current password"}
+        )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Current password entered is incorrect."
+        )
+
+    new_hashed = get_password_hash(reset_in.new_password)
+    await db["users"].update_one(
+        {"_id": current_user["_id"]},
+        {"$set": {"hashed_password": new_hashed, "must_reset_password": False}}
+    )
+
+    await log_audit_event(
+        action="PASSWORD_RESET_SUCCESS",
+        user_email=current_user["email"],
+        role=current_user["role"],
+        status_code=200,
+        details={"user_id": current_user["_id"]}
+    )
+
+    return {"message": "Password updated successfully. Forced reset flag cleared."}
 
 @router.get("/me", response_model=UserResponse)
 async def get_me(current_user: dict = Depends(get_current_user)):
@@ -107,5 +177,6 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         email=current_user["email"],
         name=current_user["name"],
         role=current_user["role"],
-        specialization=current_user.get("specialization")
+        specialization=current_user.get("specialization"),
+        must_reset_password=current_user.get("must_reset_password", False)
     )

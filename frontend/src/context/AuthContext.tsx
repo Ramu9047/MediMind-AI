@@ -9,6 +9,7 @@ export interface User {
   email: string;
   role: 'patient' | 'doctor' | 'lab' | 'admin';
   specialization?: string;
+  must_reset_password?: boolean;
 }
 
 interface AuthContextType {
@@ -19,6 +20,7 @@ interface AuthContextType {
   signup: (name: string, email: string, role: string, password?: string) => Promise<void>;
   logout: () => void;
   quickLogin: (role: 'patient' | 'doctor' | 'lab' | 'admin') => Promise<void>;
+  clearResetPasswordFlag: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -34,10 +36,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const savedUser = localStorage.getItem('medimind_user');
     if (savedToken && savedUser) {
       setToken(savedToken);
-      setUser(JSON.parse(savedUser));
+      const parsed = JSON.parse(savedUser);
+      setUser(parsed);
+      if (parsed.must_reset_password) {
+        router.push('/auth/reset-password');
+      }
     }
     setLoading(false);
-  }, []);
+  }, [router]);
 
   const login = async (email: string, password: string) => {
     const res = await fetch('/api/v1/auth/login', {
@@ -54,6 +60,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(data.user);
     localStorage.setItem('medimind_token', data.access_token);
     localStorage.setItem('medimind_user', JSON.stringify(data.user));
+
+    if (data.user?.must_reset_password || data.must_reset_password) {
+      router.push('/auth/reset-password');
+    }
     return data.user;
   };
 
@@ -82,6 +92,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     router.push('/auth/login');
   };
 
+  const clearResetPasswordFlag = () => {
+    if (user) {
+      const updated = { ...user, must_reset_password: false };
+      setUser(updated);
+      localStorage.setItem('medimind_user', JSON.stringify(updated));
+    }
+  };
+
   const quickLogin = async (role: 'patient' | 'doctor' | 'lab' | 'admin') => {
     const emailMap = {
       patient: 'patient@medimind.ai',
@@ -96,7 +114,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, signup, logout, quickLogin }}>
+    <AuthContext.Provider value={{ user, token, loading, login, signup, logout, quickLogin, clearResetPasswordFlag }}>
       {children}
     </AuthContext.Provider>
   );

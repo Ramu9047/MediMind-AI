@@ -6,6 +6,7 @@ from models import LabTestCreate, LabTestResponse, LabTestStatus, UserRole
 from auth import get_current_user, require_role
 from database import get_database
 from services.report_service import process_lab_report_file
+from services.audit_service import log_audit_event
 
 router = APIRouter(prefix="/labs", tags=["Lab Tests & Diagnostic Reports"])
 
@@ -15,7 +16,7 @@ async def book_lab_test(
     current_user: dict = Depends(require_role([UserRole.PATIENT]))
 ):
     db = get_database()
-    test_id = str(uuid.uuid4())
+    test_id = f"labtest_{uuid.uuid4().hex[:10]}"
 
     test_doc = {
         "_id": test_id,
@@ -40,6 +41,14 @@ async def book_lab_test(
         "status_badge": LabTestStatus.REQUESTED,
         "timestamp": datetime.now(timezone.utc)
     })
+
+    await log_audit_event(
+        action="LAB_TEST_ORDERED",
+        user_email=current_user["email"],
+        role=current_user["role"],
+        status_code=201,
+        details={"test_id": test_id, "test_name": test_in.test_name}
+    )
 
     return LabTestResponse(
         id=test_id,
@@ -94,6 +103,15 @@ async def update_lab_status(
         {"_id": test_id},
         {"$set": {"status": new_status, "updated_at": datetime.now(timezone.utc)}}
     )
+
+    await log_audit_event(
+        action="LAB_TEST_STATUS_UPDATED",
+        user_email=current_user["email"],
+        role=current_user["role"],
+        status_code=200,
+        details={"test_id": test_id, "new_status": new_status}
+    )
+
     return {"message": f"Lab test status updated to {new_status}"}
 
 @router.post("/{test_id}/upload-report")
@@ -137,6 +155,14 @@ async def upload_lab_report(
             "abnormal_flags": report_analysis["abnormal_flags"]
         }
     })
+
+    await log_audit_event(
+        action="LAB_REPORT_PUBLISHED",
+        user_email=current_user["email"],
+        role=current_user["role"],
+        status_code=200,
+        details={"test_id": test_id, "file_name": file.filename}
+    )
 
     return {
         "message": "Lab report uploaded and analyzed successfully",

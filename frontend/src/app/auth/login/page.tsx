@@ -1,18 +1,24 @@
 'use client';
 
 import React, { useState } from 'react';
+
 import { useAuth } from '@/context/AuthContext';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Lock, Mail, Activity } from 'lucide-react';
 
 export default function LoginPage() {
+
   const { login } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isExpired = searchParams?.get('expired') === 'true';
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,7 +54,15 @@ export default function LoginPage() {
       </div>
 
       <div className="clinical-card p-6 md:p-8 space-y-6">
+        {isExpired && (
+          <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs font-medium flex items-center gap-2">
+            <Activity className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+            <span>Your session has expired. Please log in again to continue.</span>
+          </div>
+        )}
+
         {error && (
+
           <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs font-medium">
             {error}
           </div>

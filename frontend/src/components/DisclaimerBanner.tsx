@@ -10,7 +10,7 @@ export default function DisclaimerBanner() {
         <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
         <span>
           <strong className="font-semibold uppercase tracking-wider text-[11px] mr-1">Educational Demo Only:</strong>
-          MediMind AI provides statistical educational information only and is not a substitute for professional medical advice, diagnosis, or treatment. Always consult a qualified healthcare provider.
+          MediMind AI provides statistical educational information only and is not a substitute for professional medical advice, diagnosis, or treatment. Medicine reference data is sourced from FDA/RxNorm public databases and does not constitute a prescription. Always consult a licensed healthcare provider.
         </span>
       </div>
     </div>

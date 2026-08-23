@@ -23,7 +23,8 @@ const getLocalDateStr = () => {
 
 const isSlotPassedToday = (slotTime: string, selectedDate: string) => {
   const today = getLocalDateStr();
-  if (selectedDate !== today) return false;
+  if (selectedDate < today) return true;
+  if (selectedDate > today) return false;
 
   const now = new Date();
   const [timePart, modifier] = slotTime.split(' ');

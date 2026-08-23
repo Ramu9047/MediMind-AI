@@ -41,13 +41,17 @@ async def book_appointment(
     # Validate date is not in the past
     try:
         appt_date_obj = datetime.strptime(appt_in.appointment_date, "%Y-%m-%d").date()
-        if appt_date_obj < datetime.now(timezone.utc).date():
+        today_date = datetime.now(timezone.utc).date()
+        if appt_date_obj < today_date:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Cannot book appointments for past dates."
+                detail=f"Cannot book appointments for past dates. Preferred date '{appt_in.appointment_date}' is before today's date ({today_date})."
             )
     except ValueError:
-        pass  # If non-standard date string passed, allow but recommend standard format
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid date format. Preferred date must be in YYYY-MM-DD format."
+        )
 
     db = get_database()
 
@@ -127,8 +131,18 @@ async def get_my_appointments(current_user: dict = Depends(get_current_user)):
     else:
         appts = await db["appointments"].find({"patient_id": current_user["_id"]}).to_list(length=100)
     
+    today_date = datetime.now(timezone.utc).date()
     result = []
     for a in appts:
+        status_val = a.get("status", AppointmentStatus.PENDING)
+        # Check if appointment date has passed relative to today's date
+        try:
+            d_obj = datetime.strptime(a["appointment_date"], "%Y-%m-%d").date()
+            if d_obj < today_date and status_val in [AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED]:
+                status_val = AppointmentStatus.PAST
+        except ValueError:
+            pass
+
         result.append(AppointmentResponse(
             id=a["_id"],
             patient_id=a["patient_id"],
@@ -138,7 +152,7 @@ async def get_my_appointments(current_user: dict = Depends(get_current_user)):
             appointment_date=a["appointment_date"],
             appointment_time=a["appointment_time"],
             reason=a["reason"],
-            status=a.get("status", AppointmentStatus.PENDING),
+            status=status_val,
             prediction_summary=a.get("prediction_summary"),
             created_at=a.get("created_at", datetime.now(timezone.utc))
         ))

@@ -21,14 +21,20 @@ class UserLogin(BaseModel):
     email: EmailStr
     password: str
 
+class PasswordResetRequest(BaseModel):
+    current_password: str
+    new_password: str
+
 class UserResponse(UserBase):
     id: str
     specialization: Optional[str] = None
+    must_reset_password: bool = False
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
+    must_reset_password: bool = False
     user: UserResponse
 
 # --- Patient Health Vitals ---
@@ -73,12 +79,26 @@ class PredictionResult(BaseModel):
     disclaimer: str
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+# --- Symptom NLP Extraction Models ---
+class SymptomNLPExtractRequest(BaseModel):
+    free_text: str
+
+class SymptomNLPExtractResponse(BaseModel):
+    matched_symptoms: List[str]
+    unmatched_input_notes: Optional[str] = ""
+    duration: Optional[str] = ""
+    severity: Optional[str] = ""
+    location: Optional[str] = ""
+    confidence: str = "medium"  # high | medium | low
+    disclaimer: str = "Educational Demo Only — extracted symptoms should be verified with a healthcare provider."
+
 # --- Appointment Booking Models ---
 class AppointmentStatus:
     PENDING = "Pending"
     CONFIRMED = "Confirmed"
     COMPLETED = "Completed"
     CANCELLED = "Cancelled"
+    PAST = "Past"
 
 class AppointmentCreate(BaseModel):
     doctor_id: str
@@ -146,13 +166,29 @@ class FAQResponse(BaseModel):
     sources: List[Dict[str, str]]
     disclaimer: str
 
-# --- Admin Dashboard Metrics & Staff Provisioning ---
+# --- Admin Dashboard Metrics, Audit & Staff Provisioning ---
 class StaffCreate(BaseModel):
     name: str
     email: EmailStr
     password: str
     role: str  # "doctor" | "lab" | "admin"
     specialization: Optional[str] = None
+
+class AuditEventItem(BaseModel):
+    id: str
+    action: str
+    user_email: str
+    role: str
+    status_code: int
+    details: Dict[str, Any] = {}
+    timestamp: str
+
+class AuditEventPaginatedResponse(BaseModel):
+    total: int
+    page: int
+    limit: int
+    total_pages: int
+    events: List[AuditEventItem]
 
 class AdminMetrics(BaseModel):
     total_users: int
@@ -162,5 +198,53 @@ class AdminMetrics(BaseModel):
     total_symptom_checks: int
     total_appointments: int
     total_lab_tests: int
-    system_status: str = "Operational"
+    system_status: str = "Operational (Hardened)"
     security_audits: List[Dict[str, str]]
+
+# --- Medicine Information Hub Models ---
+class MedicineSearchItem(BaseModel):
+    rxcui: str
+    name: str
+    synonym: Optional[str] = None
+    term_type: Optional[str] = None
+    is_brand: bool = False
+
+class MedicineSearchResponse(BaseModel):
+    query: str
+    results: List[MedicineSearchItem]
+
+class MedicineDetailResponse(BaseModel):
+    rxcui: str
+    generic_name: str
+    brand_names: List[str] = []
+    drug_class: Optional[str] = "Pharmacological Agent"
+    indications: str = "No specific indication text on label."
+    dosage_and_administration: str = "Refer to prescribing physician or label instructions."
+    is_prescription_required: bool = True
+    match_type: Optional[str] = "exact_ingredient"
+    is_combination_product: bool = False
+    combination_notice: Optional[str] = None
+    common_side_effects: List[str] = []
+    contraindications: List[str] = []
+    warnings_and_precautions: List[str] = []
+    storage_notes: str = "Store at room temperature."
+    source_citation: str = "US National Library of Medicine (RxNorm) & openFDA Drug Labeling API"
+    disclaimer: str = "Educational Demo Only — medicine information is for reference and does not constitute a medical prescription."
+
+
+class MedicineInteractionRequest(BaseModel):
+    rxcuis: List[str]
+
+class PairwiseInteraction(BaseModel):
+    rxcui1: str
+    drug1_name: str
+    rxcui2: str
+    drug2_name: str
+    severity: str = "Moderate"
+    description: str
+    source_citation: str = "openFDA Drug Interactions & Warnings Dataset"
+
+class MedicineInteractionResponse(BaseModel):
+    rxcuis: List[str]
+    interactions: List[PairwiseInteraction]
+    disclaimer: str = "Educational Demo Only — interaction warnings are informational and do not replace professional pharmacist review."
