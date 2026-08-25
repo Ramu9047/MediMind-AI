@@ -3,7 +3,8 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { fetchApi } from '@/lib/api';
-import { Pill, Search, Stethoscope, AlertTriangle, ExternalLink, ShieldCheck, ChevronRight, Activity } from 'lucide-react';
+import { Pill, Search, Stethoscope, AlertTriangle, ExternalLink, ShieldCheck, ChevronRight, Activity, Info } from 'lucide-react';
+
 import ProtectedRoute from '@/components/ProtectedRoute';
 
 const POPULAR_CONDITIONS = [
