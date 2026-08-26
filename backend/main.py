@@ -29,6 +29,10 @@ async def lifespan(app: FastAPI):
     yield
     await close_mongo_connection()
 
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from routes.auth_routes import limiter
+
 app = FastAPI(
     title=settings.PROJECT_NAME,
     description="Unified AI-assisted Healthcare Coordination Platform connecting Patients, Doctors, and Labs.",
@@ -38,15 +42,22 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+
 # Configured CORS Middleware
-allowed_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000,*").split(",")
+cors_origins_str = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000")
+allowed_origins = [origin.strip() for origin in cors_origins_str.split(",") if origin.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 # Include API Routers
 app.include_router(auth_routes.router, prefix=settings.API_V1_STR)

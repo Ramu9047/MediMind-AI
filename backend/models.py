@@ -1,6 +1,13 @@
 from datetime import datetime, timezone
 from typing import List, Optional, Any, Dict
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
+
+def validate_password_strength(v: str) -> str:
+    if len(v) < 8:
+        raise ValueError("Password must be at least 8 characters in length.")
+    if v.isdigit():
+        raise ValueError("Password cannot consist entirely of numbers.")
+    return v
 
 # --- User & Auth Models ---
 class UserRole:
@@ -16,6 +23,12 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str
+
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, v: str) -> str:
+        return validate_password_strength(v)
+
 
 class UserLogin(BaseModel):
     email: EmailStr
@@ -65,7 +78,8 @@ class PredictionResult(BaseModel):
     id: Optional[str] = None
     patient_id: Optional[str] = None
     symptoms: List[str]
-    predicted_disease: str
+    predicted_disease: Optional[str] = "Unclassified Pattern"
+    classification_status: Optional[str] = "classified"  # "classified" | "no_match"
     confidence_score: float
     confidence_percentage: str
     risk_level: str  # Low, Moderate, High
@@ -78,6 +92,7 @@ class PredictionResult(BaseModel):
     llm_explanation: str
     disclaimer: str
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
 
 # --- Symptom NLP Extraction Models ---
 class SymptomNLPExtractRequest(BaseModel):
@@ -127,6 +142,8 @@ class LabTestStatus:
     SAMPLE_COLLECTED = "Sample Collected"
     PROCESSING = "Processing"
     COMPLETED = "Completed"
+    EXTRACTION_FAILED = "ExtractionFailed"
+
 
 class LabTestCreate(BaseModel):
     test_name: str
@@ -173,6 +190,12 @@ class StaffCreate(BaseModel):
     password: str
     role: str  # "doctor" | "lab" | "admin"
     specialization: Optional[str] = None
+
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, v: str) -> str:
+        return validate_password_strength(v)
+
 
 class AuditEventItem(BaseModel):
     id: str
@@ -233,7 +256,8 @@ class MedicineDetailResponse(BaseModel):
 
 
 class MedicineInteractionRequest(BaseModel):
-    rxcuis: List[str]
+    rxcuis: List[str] = Field(..., max_length=10)
+
 
 class PairwiseInteraction(BaseModel):
     rxcui1: str
@@ -242,7 +266,9 @@ class PairwiseInteraction(BaseModel):
     drug2_name: str
     severity: str = "Moderate"
     description: str
+    is_grounded_in_openfda_label: bool = False
     source_citation: str = "openFDA Drug Interactions & Warnings Dataset"
+
 
 class MedicineInteractionResponse(BaseModel):
     rxcuis: List[str]

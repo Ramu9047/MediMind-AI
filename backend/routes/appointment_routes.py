@@ -165,9 +165,30 @@ async def update_appointment_status(
     current_user: dict = Depends(require_role([UserRole.DOCTOR, UserRole.ADMIN]))
 ):
     db = get_database()
+    valid_statuses = [
+        AppointmentStatus.PENDING,
+        AppointmentStatus.CONFIRMED,
+        AppointmentStatus.COMPLETED,
+        AppointmentStatus.CANCELLED,
+        AppointmentStatus.PAST
+    ]
+    if status_val not in valid_statuses:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Invalid appointment status '{status_val}'. Must be one of: {', '.join(valid_statuses)}"
+        )
+
     appt = await db["appointments"].find_one({"_id": appt_id})
     if not appt:
         raise HTTPException(status_code=404, detail="Appointment not found")
 
+    if current_user.get("role") == UserRole.DOCTOR and appt.get("doctor_id") != current_user["_id"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access forbidden: You can only update status for appointments assigned to you."
+        )
+
     await db["appointments"].update_one({"_id": appt_id}, {"$set": {"status": status_val}})
     return {"message": f"Appointment status updated to {status_val}"}
+
+

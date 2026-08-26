@@ -6,6 +6,8 @@ import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.tree import DecisionTreeClassifier
 import logging
+from rapidfuzz import fuzz
+
 
 logger = logging.getLogger("medimind")
 
@@ -120,10 +122,11 @@ class DiseasePredictor:
 
     def predict(self, user_symptoms: list):
         if not self.is_loaded or not self.model:
-            # Fallback mock prediction if dataset not loaded
             return self._fallback_prediction(user_symptoms)
 
         input_vector = np.zeros(len(self.symptoms_dict))
+
+
         matched_symptoms = []
 
         for sym in user_symptoms:
@@ -132,17 +135,36 @@ class DiseasePredictor:
                 input_vector[self.symptoms_dict[sym_clean]] = 1
                 matched_symptoms.append(sym)
             else:
-                # Partial match search
+                # RapidFuzz similarity match (> 85 threshold)
+                best_match = None
+                best_score = 0
                 for key, idx in self.symptoms_dict.items():
-                    if sym_clean in key or key in sym_clean:
-                        input_vector[idx] = 1
-                        matched_symptoms.append(key.replace("_", " "))
-                        break
+                    score = fuzz.ratio(sym_clean, key)
+                    if score > best_score:
+                        best_score = score
+                        best_match = (key, idx)
+
+                if best_match and best_score >= 85:
+                    key, idx = best_match
+                    input_vector[idx] = 1
+                    matched_symptoms.append(key.replace("_", " "))
+
 
         if sum(input_vector) == 0:
-            # If no direct match, activate a general default pattern
-            disease_name = "Allergy"
-            confidence = 0.65
+            return {
+                "classification_status": "no_match",
+                "predicted_disease": "Unclassified Pattern",
+                "confidence_score": 0.0,
+                "confidence_percentage": "0.0%",
+                "risk_level": "Low",
+                "recommended_specialist": "General Physician / Primary Care",
+                "description": "Your submitted symptoms could not be matched to a known clinical disease pattern in our classifier database. Please consult a licensed physician for clinical evaluation.",
+                "precautions": ["Consult a primary care physician", "Monitor for new or worsening symptoms", "Seek immediate emergency care if experiencing chest pain, shortness of breath, or severe pain"],
+                "medications_educational": ["No specific medication recommendation without professional evaluation"],
+                "diet_recommendations": ["Maintain hydration", "Eat balanced nutritional meals"],
+                "workout_recommendations": ["Avoid strenuous activity until clinically evaluated"],
+                "matched_symptoms": []
+            }
         else:
             probs = self.model.predict_proba([input_vector])[0]
             max_idx = np.argmax(probs)
@@ -191,15 +213,22 @@ class DiseasePredictor:
             if not match.empty:
                 workout = match['workout'].tolist()
 
-        specialist = SPECIALIST_MAPPING.get(disease_name.strip().lower(), 'General Physician')
+        high_danger_diseases = [
+            'heart attack', 'pneumonia', 'paralysis (brain hemorrhage)', 
+            'tuberculosis', 'dengue', 'aids', 'hepatitis b', 'hepatitis c'
+        ]
 
-        risk_level = "Low"
-        if confidence > 0.85:
-            risk_level = "High" if disease_name in ['Heart attack', 'Pneumonia', 'Paralysis (brain hemorrhage)', 'Tuberculosis', 'Dengue'] else "Moderate"
-        elif confidence > 0.60:
+        disease_clean = disease_name.strip().lower()
+        if any(hd in disease_clean for hd in high_danger_diseases):
+            risk_level = "High"
+        elif confidence > 0.75:
             risk_level = "Moderate"
+        else:
+            risk_level = "Low"
+
 
         return {
+            "classification_status": "classified",
             "predicted_disease": disease_name.strip(),
             "confidence_score": float(confidence),
             "confidence_percentage": f"{confidence * 100:.1f}%",
@@ -215,18 +244,20 @@ class DiseasePredictor:
 
     def _fallback_prediction(self, user_symptoms: list):
         return {
-            "predicted_disease": "Common Cold / Allergy Pattern",
-            "confidence_score": 0.75,
-            "confidence_percentage": "75.0%",
+            "classification_status": "no_match",
+            "predicted_disease": "Unclassified Pattern",
+            "confidence_score": 0.0,
+            "confidence_percentage": "0.0%",
             "risk_level": "Low",
             "recommended_specialist": "General Physician",
-            "description": "A common upper respiratory or immune sensitivity pattern.",
-            "precautions": ["Stay hydrated", "Get adequate rest", "Monitor temperature"],
-            "medications_educational": ["Antihistamines (educational reference only)"],
-            "diet_recommendations": ["Warm fluids, Vitamin C rich foods"],
-            "workout_recommendations": ["Rest until symptoms resolve"],
+            "description": "Disease classification model is currently offline. Please consult a healthcare provider for evaluation.",
+            "precautions": ["Consult a physician", "Monitor symptoms"],
+            "medications_educational": ["Consult a doctor for appropriate guidance"],
+            "diet_recommendations": ["Stay hydrated"],
+            "workout_recommendations": ["Rest until evaluated"],
             "matched_symptoms": user_symptoms
         }
+
 
 # Singleton instance initialized with relative backend/data path
 DATA_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data")

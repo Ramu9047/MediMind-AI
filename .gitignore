@@ -24,5 +24,8 @@ venv/
 logs/
 *.log
 scratch/
-test_*.py
+scratch_test_*.py
+
 backend/data/Datasets_Chest_xrays/
+backend/data/in_memory_store.json
+

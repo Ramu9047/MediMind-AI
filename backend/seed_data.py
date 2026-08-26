@@ -5,17 +5,28 @@ from database import connect_to_mongo, get_database
 from auth import get_password_hash
 from config import settings
 
-async def seed():
+import sys
+
+async def seed(force: bool = False):
     await connect_to_mongo()
     db = get_database()
 
-    # Clear existing demo collections
-    for coll_name in ["users", "patients", "predictions", "appointments", "lab_tests", "timeline", "audit_logs"]:
+    # Check if database is already seeded
+    existing_users = await db["users"].count_documents({})
+    if existing_users > 0 and not force:
+        print(f"Database already contains {existing_users} user(s). Skipping automatic reseed to preserve existing data.")
+        return
+
+    print("Seeding database with initial demo data...")
+
+    # Clear existing demo collections on first boot or explicit force
+    for coll_name in ["users", "patients", "predictions", "appointments", "lab_tests", "timeline", "audit_events", "audit_logs"]:
         coll = db[coll_name]
         if hasattr(coll, "delete_many"):
             await coll.delete_many({})
         elif hasattr(coll, "docs"):
             coll.docs = []
+
 
     # 1. Users
     pwd_user = get_password_hash("password123")
@@ -182,4 +193,6 @@ async def seed():
     print("MediMind AI database seeded successfully with realistic demo data.")
 
 if __name__ == "__main__":
-    asyncio.run(seed())
+    force_flag = "--force" in sys.argv
+    asyncio.run(seed(force=force_flag))
+

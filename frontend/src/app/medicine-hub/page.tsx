@@ -248,8 +248,19 @@ function MedicineHubSearchContent() {
               <span className="font-mono font-bold text-amberWarn block uppercase text-[10px]">Interaction Evaluation:</span>
               {interactionResult.interactions?.length > 0 ? (
                 interactionResult.interactions.map((it: any, idx: number) => (
-                  <div key={idx} className="space-y-1">
-                    <div className="font-bold text-ink dark:text-white">{it.drug1_name} + {it.drug2_name}</div>
+                  <div key={idx} className="space-y-1 pt-1 border-t border-amber-500/20 first:border-t-0 first:pt-0">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <div className="font-bold text-ink dark:text-white text-xs">{it.drug1_name} + {it.drug2_name}</div>
+                      {it.is_grounded_in_openfda_label ? (
+                        <span className="px-2 py-0.5 rounded-full bg-teal-500/20 border border-teal-500/40 text-tealPrimary dark:text-teal-400 font-mono text-[9px] font-bold">
+                          Grounded in FDA Label
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-inkMuted font-mono text-[9px] font-semibold">
+                          Not Directly Documented
+                        </span>
+                      )}
+                    </div>
                     <p className="text-inkMuted text-[11px] leading-relaxed">{it.description}</p>
                   </div>
                 ))
@@ -258,6 +269,7 @@ function MedicineHubSearchContent() {
               )}
             </div>
           )}
+
         </div>
 
       </div>

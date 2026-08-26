@@ -26,10 +26,32 @@ CONDITION_DRUG_MAP = {
     "diabetes": [
         {"rxcui": "6809", "generic_name": "Metformin", "class": "Biguanides", "brand": "Glucophage"}
     ],
+    "bronchial asthma": [
+        {"rxcui": "435", "generic_name": "Albuterol", "class": "Beta-2 Adrenergic Agonists", "brand": "ProAir HFA"},
+        {"rxcui": "41126", "generic_name": "Fluticasone", "class": "Corticosteroids", "brand": "Flovent"}
+    ],
+    "common cold": [
+        {"rxcui": "8814", "generic_name": "Pseudoephedrine", "class": "Decongestants", "brand": "Sudafed"},
+        {"rxcui": "161", "generic_name": "Acetaminophen", "class": "Analgesics / Antipyretics", "brand": "Tylenol"}
+    ],
+    "pneumonia": [
+        {"rxcui": "723", "generic_name": "Amoxicillin", "class": "Penicillin Antibiotics", "brand": "Amoxil"},
+        {"rxcui": "18631", "generic_name": "Azithromycin", "class": "Macrolide Antibiotics", "brand": "Zithromax"}
+    ],
     "migraine": [
+        {"rxcui": "37418", "generic_name": "Sumatriptan", "class": "Serotonin (5-HT1) Agonists", "brand": "Imitrex"},
         {"rxcui": "161", "generic_name": "Acetaminophen", "class": "Analgesics", "brand": "Tylenol"}
+    ],
+    "urinary tract infection": [
+        {"rxcui": "7454", "generic_name": "Nitrofurantoin", "class": "Urinary Tract Antiseptics", "brand": "Macrobid"},
+        {"rxcui": "2551", "generic_name": "Ciprofloxacin", "class": "Fluoroquinolones", "brand": "Cipro"}
+    ],
+    "acne": [
+        {"rxcui": "1350", "generic_name": "Benzoyl Peroxide", "class": "Topical Acne Agents", "brand": "Clearasil"},
+        {"rxcui": "3640", "generic_name": "Doxycycline", "class": "Tetracycline Antibiotics", "brand": "Vibramycin"}
     ]
 }
+
 
 async def search_rxnorm_medicines(query: str) -> List[Dict[str, Any]]:
     """Searches RxNorm API for medicine name autocomplete & RxCUI resolution with caching."""
@@ -276,13 +298,8 @@ async def get_medicines_by_condition(condition: str) -> List[Dict[str, Any]]:
         if clean_cond in cond_key or cond_key in clean_cond:
             matched_drugs.extend(drugs)
 
-    if not matched_drugs:
-        matched_drugs = [
-            {"rxcui": "283742", "generic_name": "Omeprazole", "class": "Proton Pump Inhibitors (PPIs)", "brand": "Prilosec"},
-            {"rxcui": "161", "generic_name": "Acetaminophen", "class": "Analgesics", "brand": "Tylenol"}
-        ]
-
     return matched_drugs
+
 
 async def check_medicine_interactions(rxcuis: List[str]) -> List[Dict[str, Any]]:
     """

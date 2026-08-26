@@ -1,15 +1,22 @@
 import uuid
 from datetime import datetime, timezone
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, HTTPException, status, Depends, Request, Response
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from models import UserCreate, UserLogin, Token, UserResponse, PasswordResetRequest
 from auth import get_password_hash, verify_password, create_access_token, get_current_user
 from database import get_database
 from services.audit_service import log_audit_event
 
+limiter = Limiter(key_func=get_remote_address)
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
+
 @router.post("/signup", response_model=Token, status_code=status.HTTP_201_CREATED)
-async def signup(user_in: UserCreate):
+@limiter.limit("5/minute")
+async def signup(request: Request, response: Response, user_in: UserCreate):
+
+
     db = get_database()
 
     # Public registration is strictly restricted to Patient accounts
@@ -85,7 +92,14 @@ async def signup(user_in: UserCreate):
         details={"user_id": user_id}
     )
 
-    token = create_access_token({"sub": user_id, "role": user_role})
+    token = create_access_token({"sub": user_id, "email": user_in.email.lower(), "role": user_role})
+    response.set_cookie(
+        key="access_token",
+        value=f"Bearer {token}",
+        httponly=True,
+        samesite="lax",
+        max_age=7200
+    )
     user_resp = UserResponse(
         id=user_id,
         email=user_in.email.lower(),
@@ -96,7 +110,9 @@ async def signup(user_in: UserCreate):
     return Token(access_token=token, token_type="bearer", must_reset_password=False, user=user_resp)
 
 @router.post("/login", response_model=Token)
-async def login(credentials: UserLogin):
+@limiter.limit("10/minute")
+async def login(request: Request, response: Response, credentials: UserLogin):
+
     db = get_database()
     email_clean = credentials.email.lower()
     user = await db["users"].find_one({"email": email_clean})
@@ -124,7 +140,15 @@ async def login(credentials: UserLogin):
         details={"user_id": user["_id"], "must_reset_password": must_reset}
     )
 
-    token = create_access_token({"sub": user["_id"], "role": user["role"]})
+    token = create_access_token({"sub": user["_id"], "email": user["email"], "role": user["role"]})
+    response.set_cookie(
+        key="access_token",
+        value=f"Bearer {token}",
+        httponly=True,
+        samesite="lax",
+        max_age=7200
+    )
+
     user_resp = UserResponse(
         id=user["_id"],
         email=user["email"],
@@ -134,6 +158,7 @@ async def login(credentials: UserLogin):
         must_reset_password=must_reset
     )
     return Token(access_token=token, token_type="bearer", must_reset_password=must_reset, user=user_resp)
+
 
 @router.post("/reset-password")
 async def reset_password(

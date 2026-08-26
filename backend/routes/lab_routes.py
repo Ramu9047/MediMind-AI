@@ -95,9 +95,29 @@ async def update_lab_status(
     current_user: dict = Depends(require_role([UserRole.LAB, UserRole.ADMIN]))
 ):
     db = get_database()
+    valid_statuses = [
+        LabTestStatus.REQUESTED,
+        LabTestStatus.SAMPLE_COLLECTED,
+        LabTestStatus.PROCESSING,
+        LabTestStatus.COMPLETED,
+        LabTestStatus.EXTRACTION_FAILED
+    ]
+    if new_status not in valid_statuses:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Invalid lab status '{new_status}'. Must be one of: {', '.join(valid_statuses)}"
+        )
+
     test = await db["lab_tests"].find_one({"_id": test_id})
     if not test:
         raise HTTPException(status_code=404, detail="Lab test not found")
+
+    if current_user.get("role") == UserRole.LAB and test.get("assigned_lab_id"):
+        if test["assigned_lab_id"] != current_user["_id"]:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access forbidden: You can only update lab test orders assigned to your laboratory."
+            )
 
     await db["lab_tests"].update_one(
         {"_id": test_id},
@@ -114,6 +134,7 @@ async def update_lab_status(
 
     return {"message": f"Lab test status updated to {new_status}"}
 
+
 @router.post("/{test_id}/upload-report")
 async def upload_lab_report(
     test_id: str,
@@ -125,10 +146,57 @@ async def upload_lab_report(
     if not test:
         raise HTTPException(status_code=404, detail="Lab test order not found")
 
+    if current_user.get("role") == UserRole.LAB and test.get("assigned_lab_id"):
+        if test["assigned_lab_id"] != current_user["_id"]:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access forbidden: You can only upload reports for lab tests assigned to your laboratory."
+            )
+
+    ALLOWED_EXTENSIONS = {".pdf", ".png", ".jpg", ".jpeg", ".webp"}
+    MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+
+    file_ext = "." + file.filename.lower().split(".")[-1] if "." in file.filename else ""
+    if file_ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Unsupported file format '{file_ext}'. Allowed formats are PDF, PNG, JPG, JPEG, and WEBP."
+        )
+
     file_bytes = await file.read()
-    
+    if len(file_bytes) > MAX_FILE_SIZE:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"File size ({len(file_bytes) / (1024*1024):.1f}MB) exceeds the 10MB maximum limit."
+        )
+
     # Run report extraction and AI interpretation
+
     report_analysis = await process_lab_report_file(file_bytes, file.filename)
+
+    if report_analysis.get("extraction_failed"):
+        update_payload = {
+            "status": "ExtractionFailed",
+            "report_file_name": file.filename,
+            "extracted_text": "",
+            "ai_summary": None,
+            "abnormal_flags": [],
+            "updated_at": datetime.now(timezone.utc)
+        }
+        await db["lab_tests"].update_one({"_id": test_id}, {"$set": update_payload})
+
+        await log_audit_event(
+            action="LAB_REPORT_EXTRACTION_FAILED",
+            user_email=current_user["email"],
+            role=current_user["role"],
+            status_code=422,
+            details={"test_id": test_id, "file_name": file.filename, "reason": report_analysis["message"]}
+        )
+
+        return {
+            "message": report_analysis["message"],
+            "analysis": report_analysis
+        }
 
     update_payload = {
         "status": LabTestStatus.COMPLETED,
@@ -168,3 +236,4 @@ async def upload_lab_report(
         "message": "Lab report uploaded and analyzed successfully",
         "analysis": report_analysis
     }
+

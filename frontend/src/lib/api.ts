@@ -17,8 +17,10 @@ export async function fetchApi<T = any>(endpoint: string, options: RequestInit =
 
   const response = await fetch(`${API_BASE}${endpoint}`, {
     ...options,
+    credentials: 'include',
     headers,
   });
+
 
   if (response.status === 401 && typeof window !== 'undefined') {
     localStorage.removeItem('medimind_token');

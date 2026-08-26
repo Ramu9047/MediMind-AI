@@ -6,9 +6,10 @@ env_path = os.path.join(os.path.dirname(__file__), ".env")
 class Settings(BaseSettings):
     PROJECT_NAME: str = "MediMind AI"
     API_V1_STR: str = "/api/v1"
-    SECRET_KEY: str = os.getenv("JWT_SECRET", "medimind-super-secret-jwt-key-change-in-prod-2026")
+    SECRET_KEY: str = os.getenv("JWT_SECRET", os.getenv("SECRET_KEY", ""))
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 120  # 120 minutes (2 hours)
+
     
     # Database
     MONGODB_URI: str = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
@@ -21,7 +22,7 @@ class Settings(BaseSettings):
     
     # Admin Credentials (Env Sourced)
     ADMIN_EMAIL: str = os.getenv("ADMIN_EMAIL", "admin@medimind.ai")
-    ADMIN_PASSWORD: str = os.getenv("ADMIN_PASSWORD", "SecuRe#Admin$9824!MediMind")
+    ADMIN_PASSWORD: str = os.getenv("ADMIN_PASSWORD", "")
     
     # Medical Disclaimer
     MEDICAL_DISCLAIMER: str = (
@@ -34,4 +35,18 @@ class Settings(BaseSettings):
         env_file = env_path
         extra = "ignore"
 
+def validate_required_secrets(settings_obj: Settings):
+    if not settings_obj.SECRET_KEY:
+        raise RuntimeError(
+            "CRITICAL SECURITY ERROR: JWT_SECRET (or SECRET_KEY) environment variable is unset or empty. "
+            "Application startup aborted."
+        )
+    if not settings_obj.ADMIN_PASSWORD:
+        raise RuntimeError(
+            "CRITICAL SECURITY ERROR: ADMIN_PASSWORD environment variable is unset or empty. "
+            "Application startup aborted."
+        )
+
 settings = Settings()
+validate_required_secrets(settings)
+

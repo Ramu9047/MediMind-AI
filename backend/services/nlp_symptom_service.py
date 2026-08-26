@@ -1,7 +1,9 @@
 import json
 import logging
 from typing import Dict, Any, List
+from rapidfuzz import fuzz
 from services.ml_service import ml_predictor
+
 from services.llm_service import call_llm_api
 
 logger = logging.getLogger("medimind")
@@ -61,14 +63,19 @@ async def extract_symptoms_from_free_text(free_text: str) -> Dict[str, Any]:
         except Exception as e:
             logger.warning(f"Failed to parse LLM JSON extraction response: {e}")
 
-    # Fallback keyword matching against canonical symptoms
+    # Fallback keyword matching against canonical symptoms using RapidFuzz
+
     matched_symptoms = []
     text_lower = free_text.lower()
     for s in canonical_symptoms:
         s_lower = s.lower()
-        # Word boundary check or substring match
-        if s_lower in text_lower or any(word in text_lower for word in s_lower.split() if len(word) > 4):
+        if s_lower in text_lower:
             matched_symptoms.append(s)
+        else:
+            score = fuzz.partial_ratio(s_lower, text_lower)
+            if score >= 88 and len(s_lower) > 3:
+                matched_symptoms.append(s)
+
 
     # Limit fallback matches to top 5
     matched_symptoms = list(dict.fromkeys(matched_symptoms))[:5]

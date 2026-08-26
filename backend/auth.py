@@ -7,7 +7,9 @@ from jose import JWTError, jwt
 from config import settings
 from database import get_database
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/auth/login")
+from fastapi import Request
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/auth/login", auto_error=False)
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     try:
@@ -30,12 +32,26 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
 
-async def get_current_user(token: str = Depends(oauth2_scheme)):
+async def get_current_user(request: Request, token_header: Optional[str] = Depends(oauth2_scheme)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
+    
+    token = token_header
+    if not token and request and request.cookies.get("access_token"):
+        cookie_val = request.cookies.get("access_token")
+        if cookie_val.startswith("Bearer "):
+            token = cookie_val.split(" ", 1)[1]
+        else:
+            token = cookie_val
+
+    if not token:
+        from services.audit_service import log_audit_event
+        await log_audit_event("AUTH_UNAUTHORIZED", "unknown", role="anonymous", status_code=401, details={"reason": "No access token provided in header or cookie"})
+        raise credentials_exception
+
     user_email = "unknown"
     user_id = None
     try:
@@ -58,6 +74,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
         await log_audit_event("AUTH_UNAUTHORIZED", user_email, role="unknown", status_code=401, details={"user_id": user_id, "reason": "User session expired or account not found in database"})
         raise credentials_exception
     return user
+
 
 
 def require_role(allowed_roles: list):

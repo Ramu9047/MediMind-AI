@@ -98,6 +98,9 @@ Please provide a reassuring, 3-paragraph plain-language explanation:
         f"Before your appointment, note down when your symptoms began, their severity, and any aggravating factors."
     )
 
+import json
+import re
+
 async def summarize_lab_report(extracted_text: str) -> dict:
     """Generates plain-language summary and flags abnormal values from extracted lab text."""
     system_prompt = (
@@ -110,7 +113,26 @@ async def summarize_lab_report(extracted_text: str) -> dict:
 
     llm_output = await call_llm_api(system_prompt, user_prompt)
     
-    # Simple rule-based extraction fallback for demo robustness
+    if llm_output:
+        try:
+            cleaned = re.sub(r"^```(?:json)?\s*", "", llm_output.strip(), flags=re.MULTILINE)
+            cleaned = re.sub(r"\s*```$", "", cleaned.strip(), flags=re.MULTILINE)
+            parsed = json.loads(cleaned)
+
+            if isinstance(parsed, dict) and "summary" in parsed:
+                return {
+                    "summary": str(parsed.get("summary", "")),
+                    "abnormal_flags": parsed.get("abnormal_flags") or ["All detected core markers appear within typical reference intervals."],
+                    "recommended_questions": parsed.get("recommended_questions") or [
+                        "What do these specific marker values mean for my daily health routine?",
+                        "Are follow-up blood tests or fasting re-checks recommended?",
+                        "Should I adjust any medications or dietary habits based on these findings?"
+                    ]
+                }
+        except Exception as e:
+            logger.warning(f"Failed to parse LLM lab report summary JSON: {e}")
+
+    # Rule-based extraction fallback if LLM is unavailable or JSON parsing fails
     abnormal_flags = []
     text_lower = extracted_text.lower()
     
@@ -125,12 +147,9 @@ async def summarize_lab_report(extracted_text: str) -> dict:
             abnormal_flags.append("White Blood Cell Count: Mildly elevated (suggests active immune/inflammatory response).")
 
     summary = (
-        "The uploaded lab report has been parsed. Most routine parameters fall within standard reference ranges. "
-        "Key metabolic and blood markers have been structured for your doctor's review."
+        "The uploaded lab report text has been parsed. Core metabolic and diagnostic parameters "
+        "have been extracted for physician review."
     )
-
-    if llm_output and "summary" in llm_output:
-        summary = llm_output
 
     return {
         "summary": summary,
@@ -141,3 +160,4 @@ async def summarize_lab_report(extracted_text: str) -> dict:
             "Should I adjust any medications or dietary habits based on these findings?"
         ]
     }
+

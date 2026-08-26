@@ -74,6 +74,12 @@ async def check_interactions(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="At least 2 RxCUIs are required to perform a pairwise drug interaction check."
         )
+    if len(req.rxcuis) > 10:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Maximum of 10 RxCUIs permitted per interaction request."
+        )
+
 
     pairwise_list = await check_medicine_interactions(req.rxcuis)
     items = [PairwiseInteraction(**p) for p in pairwise_list]

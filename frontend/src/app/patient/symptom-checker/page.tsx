@@ -362,15 +362,56 @@ export default function SymptomCheckerPage() {
           )}
 
           {!loading && prediction && (
-            <div className="clinical-card p-6 md:p-8 space-y-6 animate-card-rise border-tealPrimary/30">
-              {/* HEADER: DISEASE & CONFIDENCE RING */}
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-slate-200 dark:border-slate-800">
-                <div>
-                  <div className="font-mono text-[11px] uppercase tracking-wider text-inkMuted font-semibold">STATISTICAL PATTERN MATCH</div>
-                  <h2 className="text-2xl font-heading font-extrabold text-ink dark:text-white mt-1">
-                    {prediction.predicted_disease}
-                  </h2>
+            prediction.classification_status === 'no_match' ? (
+              <div className="clinical-card p-6 md:p-8 space-y-6 animate-card-rise border-amber-500/30">
+                <div className="flex items-center gap-3 pb-4 border-b border-slate-200 dark:border-slate-800">
+                  <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amberWarn flex items-center justify-center">
+                    <AlertTriangle className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <div className="font-mono text-[11px] uppercase tracking-wider text-amberWarn font-semibold">UNMATCHED SYMPTOM PATTERN</div>
+                    <h2 className="text-xl font-heading font-extrabold text-ink dark:text-white mt-0.5">
+                      No Direct Disease Match Found
+                    </h2>
+                  </div>
                 </div>
+
+                <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs leading-relaxed space-y-2">
+                  <p className="font-medium">
+                    We could not match your symptoms to a known clinical disease pattern in our model vocabulary.
+                  </p>
+                  <p>
+                    Please consult a primary care physician or specialist for a comprehensive clinical evaluation.
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2">
+                  <h4 className="font-heading font-bold text-xs text-ink dark:text-white uppercase font-mono">Recommended Actions:</h4>
+                  <ul className="list-disc list-inside text-xs text-inkMuted space-y-1">
+                    <li>Book a consultation with a General Physician for clinical evaluation.</li>
+                    <li>Monitor your symptoms closely and note any new developments.</li>
+                    <li>Seek immediate emergency medical care if experiencing severe pain, shortness of breath, or chest pressure.</li>
+                  </ul>
+                </div>
+
+                <button
+                  onClick={() => router.push('/patient/appointments')}
+                  className="w-full btn-teal py-3 text-xs font-semibold shadow-sm"
+                >
+                  Book General Physician Consultation
+                </button>
+              </div>
+            ) : (
+              <div className="clinical-card p-6 md:p-8 space-y-6 animate-card-rise border-tealPrimary/30">
+                {/* HEADER: DISEASE & CONFIDENCE RING */}
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-slate-200 dark:border-slate-800">
+                  <div>
+                    <div className="font-mono text-[11px] uppercase tracking-wider text-inkMuted font-semibold">STATISTICAL PATTERN MATCH</div>
+                    <h2 className="text-2xl font-heading font-extrabold text-ink dark:text-white mt-1">
+                      {prediction.predicted_disease}
+                    </h2>
+                  </div>
+
 
                 <div className="flex items-center gap-4">
                   <div className="relative w-16 h-16 flex items-center justify-center">
@@ -492,7 +533,8 @@ export default function SymptomCheckerPage() {
                 </div>
               </div>
 
-            </div>
+              </div>
+            )
           )}
         </div>
       </div>

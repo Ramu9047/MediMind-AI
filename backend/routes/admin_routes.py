@@ -31,24 +31,18 @@ async def get_admin_metrics(current_user: dict = Depends(require_role([UserRole.
             "timestamp": str(log.get("timestamp", datetime.now(timezone.utc).isoformat()))
         })
 
-    if not audit_logs:
-        audit_logs = [
-            {"action": "SECURITY_AUDIT_PASS", "user": "security@medimind.ai", "timestamp": datetime.now(timezone.utc).isoformat()},
-            {"action": "JWT_TOKEN_SECRET_VERIFIED", "user": "system", "timestamp": datetime.now(timezone.utc).isoformat()},
-            {"action": "RATE_LIMITER_ACTIVE", "user": "system", "timestamp": datetime.now(timezone.utc).isoformat()}
-        ]
-
     return AdminMetrics(
-        total_users=max(total_users, 4),
-        total_patients=max(total_patients, 1),
-        total_doctors=max(total_doctors, 1),
-        total_labs=max(total_labs, 1),
+        total_users=total_users,
+        total_patients=total_patients,
+        total_doctors=total_doctors,
+        total_labs=total_labs,
         total_symptom_checks=total_symptom_checks,
         total_appointments=total_appointments,
         total_lab_tests=total_lab_tests,
         system_status="Operational (Hardened)",
         security_audits=audit_logs
     )
+
 
 @router.get("/audit-events", response_model=AuditEventPaginatedResponse)
 async def get_audit_events(

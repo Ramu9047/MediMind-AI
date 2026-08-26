@@ -1,16 +1,18 @@
-import re
 import io
 import logging
 from pypdf import PdfReader
+from PIL import Image
+import pytesseract
 from services.llm_service import summarize_lab_report
 
 logger = logging.getLogger("medimind")
 
 async def process_lab_report_file(file_bytes: bytes, filename: str) -> dict:
-    """Extracts text from PDF/image lab report files and performs AI interpretation."""
+    """Extracts text from PDF/image lab report files using PyPDF and PyTesseract OCR, then performs AI interpretation."""
     extracted_text = ""
+    ext = filename.lower().split(".")[-1]
     
-    if filename.lower().endswith(".pdf"):
+    if ext == "pdf":
         try:
             reader = PdfReader(io.BytesIO(file_bytes))
             for page in reader.pages:
@@ -19,30 +21,36 @@ async def process_lab_report_file(file_bytes: bytes, filename: str) -> dict:
                     extracted_text += text + "\n"
         except Exception as e:
             logger.error(f"Error reading PDF file {filename}: {e}")
-            extracted_text = f"Sample Diagnostic Lab Report for {filename}\nComprehensive Metabolic & Lipid Profile Result."
+    elif ext in ["jpg", "jpeg", "png", "webp"]:
+        try:
+            image = Image.open(io.BytesIO(file_bytes))
+            extracted_text = pytesseract.image_to_string(image)
+        except Exception as e:
+            logger.warning(f"PyTesseract OCR processing failed for image {filename}: {e}")
     else:
-        # For non-PDF or image documents in demo mode
         try:
             extracted_text = file_bytes.decode('utf-8', errors='ignore')
         except Exception:
-            extracted_text = f"Lab document {filename} received. Diagnostic test results scanned."
+            extracted_text = ""
 
-    if not extracted_text.strip():
-        extracted_text = (
-            f"LABORATORY TEST REPORT - {filename.upper()}\n"
-            f"Fasting Blood Glucose: 110 mg/dL (Reference: 70-99 mg/dL) [Mildly Elevated]\n"
-            f"Total Cholesterol: 215 mg/dL (Reference: <200 mg/dL) [Elevated]\n"
-            f"Hemoglobin A1c: 5.7% (Reference: <5.7%)\n"
-            f"White Blood Cell (WBC): 7.2 x10^3/uL (Reference: 4.5-11.0)\n"
-            f"Platelet Count: 250 x10^3/uL (Reference: 150-450)"
-        )
+    clean_text = extracted_text.strip()
+    if not clean_text or len(clean_text) < 10:
+        return {
+            "extraction_failed": True,
+            "message": f"Could not extract readable text from '{filename}'. Please upload a text-based PDF or clear image file.",
+            "extracted_text": "",
+            "ai_summary": None,
+            "abnormal_flags": [],
+            "recommended_questions": []
+        }
 
     # Perform AI interpretation
-    summary_data = await summarize_lab_report(extracted_text)
+    summary_data = await summarize_lab_report(clean_text)
 
     return {
-        "extracted_text": extracted_text[:1000],  # Truncated for clean storage
-        "ai_summary": summary_data["summary"],
-        "abnormal_flags": summary_data["abnormal_flags"],
-        "recommended_questions": summary_data["recommended_questions"]
+        "extraction_failed": False,
+        "extracted_text": clean_text[:1000],
+        "ai_summary": summary_data.get("summary", ""),
+        "abnormal_flags": summary_data.get("abnormal_flags", []),
+        "recommended_questions": summary_data.get("recommended_questions", [])
     }
