@@ -65,8 +65,22 @@ async def search_rxnorm_medicines(query: str) -> List[Dict[str, Any]]:
         return cached["results"]
 
     results = []
+    if clean_query.isdigit():
+        direct_props = await resolve_rxnorm_properties(clean_query)
+        if direct_props and direct_props.get("name"):
+            name = direct_props["name"]
+            is_brand = "brand" in name.lower() or " / " in name
+            results.append({
+                "rxcui": str(clean_query),
+                "name": name,
+                "synonym": None,
+                "term_type": direct_props.get("tty", "BN" if is_brand else "IN"),
+                "is_brand": is_brand
+            })
+
     try:
         async with httpx.AsyncClient(timeout=8.0) as client:
+
             resp = await client.get(
                 f"{RXNORM_BASE_URL}/approximateTerm.json",
                 params={"term": clean_query, "maxEntries": 12}
@@ -179,7 +193,12 @@ async def fetch_verified_openfda_label(clean_rxcui: str, rxnorm_name: str) -> tu
                 if results:
                     label = results[0]
                     if clean_rxcui in label.get("openfda", {}).get("rxcui", []):
-                        return label, "exact_ingredient"
+                        gen_names = label.get("openfda", {}).get("generic_name", [])
+                        raw_gen = gen_names[0].strip().lower() if gen_names else ""
+                        is_combo = any(marker in raw_gen for marker in [" and ", " / ", " + ", " with ", " & "]) or any(marker in rxnorm_name.lower() for marker in [" and ", " / ", " + ", " with ", " & "])
+                        match_type = "combination_product" if is_combo else "exact_ingredient"
+                        return label, match_type
+
     except Exception as e:
         logger.warning(f"Direct openfda.rxcui lookup failed for {clean_rxcui}: {e}")
 

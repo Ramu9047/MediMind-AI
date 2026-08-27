@@ -170,6 +170,8 @@ class DiseasePredictor:
             max_idx = np.argmax(probs)
             disease_name = self.model.classes_[max_idx]
             confidence = probs[max_idx]
+            specialist = SPECIALIST_MAPPING.get(disease_name.strip().lower(), "General Physician / Primary Care")
+
 
         # Extract details from CSV dataframes
         desc = "No specific description available."
