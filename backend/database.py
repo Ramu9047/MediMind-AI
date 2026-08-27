@@ -76,6 +76,54 @@ class InMemoryCursor:
         sorted_docs = sorted(self.docs, key=get_sort_key, reverse=reverse)
         return InMemoryCursor(sorted_docs)
 
+def _match_query(doc: dict, query: dict) -> bool:
+    if not query:
+        return True
+
+    for k, v in query.items():
+        if k == "$or":
+            if not isinstance(v, list) or not any(_match_query(doc, sub_q) for sub_q in v):
+                return False
+            continue
+        if k == "$and":
+            if not isinstance(v, list) or not all(_match_query(doc, sub_q) for sub_q in v):
+                return False
+            continue
+
+        val = doc.get(k)
+        if isinstance(v, dict):
+            for op, op_val in v.items():
+                if op == "$exists":
+                    exists = (k in doc and doc[k] is not None)
+                    if bool(op_val) != exists:
+                        return False
+                elif op == "$in":
+                    if val not in op_val:
+                        return False
+                elif op == "$nin":
+                    if val in op_val:
+                        return False
+                elif op == "$ne":
+                    if val == op_val:
+                        return False
+                elif op == "$gt":
+                    if val is None or val <= op_val:
+                        return False
+                elif op == "$gte":
+                    if val is None or val < op_val:
+                        return False
+                elif op == "$lt":
+                    if val is None or val >= op_val:
+                        return False
+                elif op == "$lte":
+                    if val is None or val > op_val:
+                        return False
+        else:
+            if val != v:
+                return False
+
+    return True
+
 class InMemoryCollection:
     def __init__(self, name: str, parent_db):
         self.name = name
@@ -96,14 +144,14 @@ class InMemoryCollection:
 
     async def find_one(self, query: dict):
         for doc in self.docs:
-            if all(doc.get(k) == v for k, v in query.items()):
+            if _match_query(doc, query):
                 return doc
         return None
 
     def find(self, query: dict = None):
         if not query:
             return InMemoryCursor(self.docs)
-        filtered = [d for d in self.docs if all(d.get(k) == v for k, v in query.items())]
+        filtered = [d for d in self.docs if _match_query(d, query)]
         return InMemoryCursor(filtered)
 
     async def update_one(self, query: dict, update: dict):
@@ -119,7 +167,7 @@ class InMemoryCollection:
         if not query:
             self.docs = []
         else:
-            self.docs = [d for d in self.docs if not all(d.get(k) == v for k, v in query.items())]
+            self.docs = [d for d in self.docs if not _match_query(d, query)]
         deleted_count = initial_len - len(self.docs)
         self._persist()
         class DeleteResult:
@@ -131,7 +179,8 @@ class InMemoryCollection:
     async def count_documents(self, query: dict = None):
         if not query:
             return len(self.docs)
-        return len([d for d in self.docs if all(d.get(k) == v for k, v in query.items())])
+        return len([d for d in self.docs if _match_query(d, query)])
+
 
 class InMemoryDatabase:
     def __init__(self):

@@ -18,7 +18,8 @@ async def book_lab_test(
     db = get_database()
     test_id = f"labtest_{uuid.uuid4().hex[:10]}"
 
-    assigned_lab_id = test_in.assigned_lab_id or "lab_demo_01"
+    assigned_lab_id = test_in.assigned_lab_id
+
 
     test_doc = {
         "_id": test_id,
