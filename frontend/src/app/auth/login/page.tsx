@@ -1,15 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
-
+import React, { useState, Suspense } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Lock, Mail, Activity } from 'lucide-react';
-
 import MediMindLogo from '@/components/MediMindLogo';
 
-export default function LoginPage() {
+function LoginFormContent() {
   const { user, login } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -65,7 +63,6 @@ export default function LoginPage() {
         )}
 
         {error && (
-
           <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs font-medium">
             {error}
           </div>
@@ -123,3 +120,12 @@ export default function LoginPage() {
     </div>
   );
 }
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="text-center py-12 text-xs text-inkMuted">Loading authentication...</div>}>
+      <LoginFormContent />
+    </Suspense>
+  );
+}
+
