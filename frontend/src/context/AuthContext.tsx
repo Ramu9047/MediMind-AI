@@ -14,7 +14,6 @@ export interface User {
 
 interface AuthContextType {
   user: User | null;
-  token: string | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<User>;
   signup: (name: string, email: string, role: string, password?: string) => Promise<void>;
@@ -27,15 +26,12 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const router = useRouter();
 
   useEffect(() => {
-    const savedToken = localStorage.getItem('medimind_token');
     const savedUser = localStorage.getItem('medimind_user');
-    if (savedToken && savedUser) {
-      setToken(savedToken);
+    if (savedUser) {
       const parsed = JSON.parse(savedUser);
       setUser(parsed);
       if (parsed.must_reset_password) {
@@ -50,15 +46,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
+      credentials: 'include',
     });
     if (!res.ok) {
       const err = await res.json();
       throw new Error(err.detail || 'Login failed');
     }
     const data = await res.json();
-    setToken(data.access_token);
     setUser(data.user);
-    localStorage.setItem('medimind_token', data.access_token);
     localStorage.setItem('medimind_user', JSON.stringify(data.user));
 
     if (data.user?.must_reset_password || data.must_reset_password) {
@@ -72,25 +67,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, email, role, password }),
+      credentials: 'include',
     });
     if (!res.ok) {
       const err = await res.json();
       throw new Error(err.detail || 'Signup failed');
     }
     const data = await res.json();
-    setToken(data.access_token);
     setUser(data.user);
-    localStorage.setItem('medimind_token', data.access_token);
     localStorage.setItem('medimind_user', JSON.stringify(data.user));
   };
 
   const logout = () => {
     setUser(null);
-    setToken(null);
-    localStorage.removeItem('medimind_token');
     localStorage.removeItem('medimind_user');
     router.push('/auth/login');
   };
+
 
   const clearResetPasswordFlag = () => {
     if (user) {
@@ -114,7 +107,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, signup, logout, quickLogin, clearResetPasswordFlag }}>
+    <AuthContext.Provider value={{ user, loading, login, signup, logout, quickLogin, clearResetPasswordFlag }}>
+
       {children}
     </AuthContext.Provider>
   );

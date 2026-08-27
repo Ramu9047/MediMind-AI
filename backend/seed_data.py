@@ -148,7 +148,9 @@ async def seed(force: bool = False):
         "test_name": "Comprehensive Metabolic & Endoscopy Panel",
         "status": "Completed",
         "notes": "Fast for 8 hours prior to blood draw.",
+        "assigned_lab_id": lab_id,
         "report_file_name": "Sarah_Connor_Lab_Report_2026.pdf",
+
         "extracted_text": "LABORATORY DIAGNOSTICS REPORT\nFasting Blood Glucose: 92 mg/dL (Reference: 70-99)\nHemoglobin: 13.5 g/dL (Reference: 12.0-15.5)\nHelicobacter Pylori Antigen: Negative\nSerum Gastrin: 65 pg/mL (Normal)",
         "ai_summary": "All primary metabolic and gastrointestinal biomarkers fall within normal adult reference intervals. H. Pylori antigen test is negative.",
         "abnormal_flags": ["No abnormal biomarker elevations detected."],

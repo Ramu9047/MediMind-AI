@@ -1,8 +1,6 @@
 const API_BASE = '/api/v1';
 
 export async function fetchApi<T = any>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('medimind_token') : null;
-
   const headers: Record<string, string> = {
     ...(options.headers as Record<string, string>),
   };
@@ -11,24 +9,19 @@ export async function fetchApi<T = any>(endpoint: string, options: RequestInit =
     headers['Content-Type'] = 'application/json';
   }
 
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-
   const response = await fetch(`${API_BASE}${endpoint}`, {
     ...options,
     credentials: 'include',
     headers,
   });
 
-
   if (response.status === 401 && typeof window !== 'undefined') {
-    localStorage.removeItem('medimind_token');
     localStorage.removeItem('medimind_user');
     if (!window.location.pathname.includes('/auth/login')) {
       window.location.href = '/auth/login?expired=true';
     }
   }
+
 
   if (!response.ok) {
 

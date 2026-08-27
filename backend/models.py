@@ -148,6 +148,7 @@ class LabTestStatus:
 class LabTestCreate(BaseModel):
     test_name: str
     notes: Optional[str] = ""
+    assigned_lab_id: Optional[str] = None
 
 class LabTestResponse(BaseModel):
     id: str
@@ -156,12 +157,14 @@ class LabTestResponse(BaseModel):
     test_name: str
     status: str = LabTestStatus.REQUESTED
     notes: Optional[str] = ""
+    assigned_lab_id: Optional[str] = None
     report_file_name: Optional[str] = None
     extracted_text: Optional[str] = None
     ai_summary: Optional[str] = None
     abnormal_flags: List[str] = []
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
 
 # --- Medical Timeline Entry ---
 class TimelineEntry(BaseModel):

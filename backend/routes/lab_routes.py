@@ -18,6 +18,8 @@ async def book_lab_test(
     db = get_database()
     test_id = f"labtest_{uuid.uuid4().hex[:10]}"
 
+    assigned_lab_id = test_in.assigned_lab_id or "lab_demo_01"
+
     test_doc = {
         "_id": test_id,
         "patient_id": current_user["_id"],
@@ -25,6 +27,7 @@ async def book_lab_test(
         "test_name": test_in.test_name,
         "status": LabTestStatus.REQUESTED,
         "notes": test_in.notes,
+        "assigned_lab_id": assigned_lab_id,
         "created_at": datetime.now(timezone.utc),
         "updated_at": datetime.now(timezone.utc)
     }
@@ -57,6 +60,7 @@ async def book_lab_test(
         test_name=test_in.test_name,
         status=LabTestStatus.REQUESTED,
         notes=test_in.notes,
+        assigned_lab_id=assigned_lab_id,
         created_at=test_doc["created_at"],
         updated_at=test_doc["updated_at"]
     )
@@ -65,7 +69,9 @@ async def book_lab_test(
 async def get_my_lab_tests(current_user: dict = Depends(get_current_user)):
     db = get_database()
     role = current_user.get("role")
-    if role == UserRole.LAB or role == UserRole.ADMIN:
+    if role == UserRole.LAB:
+        tests = await db["lab_tests"].find({"$or": [{"assigned_lab_id": current_user["_id"]}, {"assigned_lab_id": {"$exists": False}}, {"assigned_lab_id": None}]}).to_list(length=100)
+    elif role == UserRole.ADMIN:
         tests = await db["lab_tests"].find({}).to_list(length=100)
     else:
         tests = await db["lab_tests"].find({"patient_id": current_user["_id"]}).to_list(length=100)
@@ -79,6 +85,7 @@ async def get_my_lab_tests(current_user: dict = Depends(get_current_user)):
             test_name=t["test_name"],
             status=t.get("status", LabTestStatus.REQUESTED),
             notes=t.get("notes", ""),
+            assigned_lab_id=t.get("assigned_lab_id"),
             report_file_name=t.get("report_file_name"),
             extracted_text=t.get("extracted_text"),
             ai_summary=t.get("ai_summary"),
@@ -112,12 +119,15 @@ async def update_lab_status(
     if not test:
         raise HTTPException(status_code=404, detail="Lab test not found")
 
-    if current_user.get("role") == UserRole.LAB and test.get("assigned_lab_id"):
-        if test["assigned_lab_id"] != current_user["_id"]:
+    if current_user.get("role") == UserRole.LAB:
+        assigned = test.get("assigned_lab_id")
+        if assigned and assigned != current_user["_id"]:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Access forbidden: You can only update lab test orders assigned to your laboratory."
             )
+        elif not assigned:
+            await db["lab_tests"].update_one({"_id": test_id}, {"$set": {"assigned_lab_id": current_user["_id"]}})
 
     await db["lab_tests"].update_one(
         {"_id": test_id},
@@ -134,7 +144,6 @@ async def update_lab_status(
 
     return {"message": f"Lab test status updated to {new_status}"}
 
-
 @router.post("/{test_id}/upload-report")
 async def upload_lab_report(
     test_id: str,
@@ -146,12 +155,16 @@ async def upload_lab_report(
     if not test:
         raise HTTPException(status_code=404, detail="Lab test order not found")
 
-    if current_user.get("role") == UserRole.LAB and test.get("assigned_lab_id"):
-        if test["assigned_lab_id"] != current_user["_id"]:
+    if current_user.get("role") == UserRole.LAB:
+        assigned = test.get("assigned_lab_id")
+        if assigned and assigned != current_user["_id"]:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Access forbidden: You can only upload reports for lab tests assigned to your laboratory."
             )
+        elif not assigned:
+            await db["lab_tests"].update_one({"_id": test_id}, {"$set": {"assigned_lab_id": current_user["_id"]}})
+
 
     ALLOWED_EXTENSIONS = {".pdf", ".png", ".jpg", ".jpeg", ".webp"}
     MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB

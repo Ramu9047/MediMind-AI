@@ -37,6 +37,7 @@ async def check_symptoms(symptom_in: SymptomInput, current_user: dict = Depends(
         patient_id=patient_id,
         symptoms=symptom_in.symptoms,
         predicted_disease=raw_pred["predicted_disease"],
+        classification_status=raw_pred.get("classification_status", "classified"),
         confidence_score=raw_pred["confidence_score"],
         confidence_percentage=raw_pred["confidence_percentage"],
         risk_level=raw_pred["risk_level"],
@@ -50,6 +51,7 @@ async def check_symptoms(symptom_in: SymptomInput, current_user: dict = Depends(
         disclaimer=settings.MEDICAL_DISCLAIMER,
         created_at=datetime.now(timezone.utc)
     )
+
 
     db = get_database()
     # Save prediction doc

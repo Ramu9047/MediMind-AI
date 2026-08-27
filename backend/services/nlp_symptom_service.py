@@ -1,5 +1,7 @@
 import json
+import re
 import logging
+
 from typing import Dict, Any, List
 from rapidfuzz import fuzz
 from services.ml_service import ml_predictor
@@ -63,19 +65,61 @@ async def extract_symptoms_from_free_text(free_text: str) -> Dict[str, Any]:
         except Exception as e:
             logger.warning(f"Failed to parse LLM JSON extraction response: {e}")
 
-    # Fallback keyword matching against canonical symptoms using RapidFuzz
-
-    matched_symptoms = []
+    # Fallback keyword matching against canonical symptoms using token & synonym scanning
     text_lower = free_text.lower()
+    words = re.findall(r'\b\w+\b', text_lower)
+    matched_symptoms = []
+
+    synonym_map = {
+        "nauseous": "Nausea",
+        "nausea": "Nausea",
+        "vomit": "Vomiting",
+        "vomiting": "Vomiting",
+        "dizzy": "Dizziness",
+        "dizziness": "Dizziness",
+        "headache": "Headache",
+        "sneezing": "Sneezing",
+        "sneeze": "Sneezing",
+        "runny nose": "Runny Nose",
+        "fever": "High Fever",
+        "shivering": "Shivering",
+        "chills": "Chills",
+        "dark urine": "Dark Urine",
+        "burning micturition": "Burning Micturition",
+        "burning urination": "Burning Micturition",
+        "frequent urination": "Continuous Feel Of Urine",
+        "stomach pain": "Stomach Pain",
+        "abdominal pain": "Abdominal Pain",
+    }
+
+    # 1. Check synonym map
+    for syn_key, canonical_val in synonym_map.items():
+        if syn_key in text_lower or any(fuzz.ratio(syn_key, w) >= 80 for w in words):
+            if canonical_val in canonical_symptoms and canonical_val not in matched_symptoms:
+                matched_symptoms.append(canonical_val)
+
+    # 2. Check canonical symptom matching against n-grams & words
     for s in canonical_symptoms:
+        if s in matched_symptoms:
+            continue
         s_lower = s.lower()
+        s_words = s_lower.split()
+
         if s_lower in text_lower:
             matched_symptoms.append(s)
-        else:
-            score = fuzz.partial_ratio(s_lower, text_lower)
-            if score >= 88 and len(s_lower) > 3:
-                matched_symptoms.append(s)
+            continue
 
+        if len(s_words) == 1:
+            target = s_words[0]
+            if any(fuzz.ratio(target, w) >= 80 for w in words if len(w) >= 4):
+                matched_symptoms.append(s)
+                continue
+
+        if len(s_words) > 1:
+            major_words = [w for w in s_words if len(w) > 3]
+            if major_words and all(any(fuzz.ratio(mw, w) >= 75 for w in words) for mw in major_words):
+                matched_symptoms.append(s)
+                continue
 
     # Limit fallback matches to top 5
     matched_symptoms = list(dict.fromkeys(matched_symptoms))[:5]
@@ -89,3 +133,4 @@ async def extract_symptoms_from_free_text(free_text: str) -> Dict[str, Any]:
         "location": "unspecified",
         "confidence": confidence
     }
+
