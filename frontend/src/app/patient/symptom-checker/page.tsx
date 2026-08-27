@@ -109,11 +109,13 @@ export default function SymptomCheckerPage() {
         setSelectedSymptoms(Array.from(new Set([...selectedSymptoms, ...mapped])));
         setNlpMessage(`We detected: ${res.matched_symptoms.join(', ')} from your description.`);
       } else {
+        setSelectedSymptoms([freeText.trim()]);
         setNlpMessage(
-          "We couldn't match your description to a tracked symptom. You can pick symptoms manually below, or this may describe something outside our current 41-condition model — please consult a doctor for anything persistent or severe."
+          "We couldn't match your description to a tracked symptom. You can evaluate this unmapped pattern directly or pick symptoms manually below."
         );
         setShowManualPicker(true);
       }
+
     } catch (err: any) {
       setNlpMessage('Symptom extraction failed. You can select symptoms manually below.');
       setShowManualPicker(true);
