@@ -8,7 +8,7 @@ from database import get_database
 router = APIRouter(prefix="/appointments", tags=["Appointments"])
 
 @router.get("/doctors")
-async def list_available_doctors():
+async def list_available_doctors(current_user: dict = Depends(get_current_user)):
     db = get_database()
     doctors = await db["users"].find({"role": UserRole.DOCTOR}).to_list(length=50)
     result = []
@@ -22,7 +22,7 @@ async def list_available_doctors():
     return result
 
 @router.get("/booked-slots")
-async def get_booked_slots(doctor_id: str, date: str):
+async def get_booked_slots(doctor_id: str, date: str, current_user: dict = Depends(get_current_user)):
     db = get_database()
     appts = await db["appointments"].find({
         "doctor_id": doctor_id,
@@ -32,6 +32,7 @@ async def get_booked_slots(doctor_id: str, date: str):
     
     booked = [a["appointment_time"] for a in appts if a.get("appointment_time")]
     return {"doctor_id": doctor_id, "date": date, "booked_slots": booked}
+
 
 @router.post("/book", response_model=AppointmentResponse)
 async def book_appointment(

@@ -26,7 +26,8 @@ async def signup(request: Request, response: Response, user_in: UserCreate):
             user_email=user_in.email.lower(),
             role=user_in.role,
             status_code=400,
-            details={"attempted_role": user_in.role}
+            details={"attempted_role": user_in.role},
+            request=request
         )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -42,54 +43,43 @@ async def signup(request: Request, response: Response, user_in: UserCreate):
             user_email=user_in.email.lower(),
             role=user_role,
             status_code=400,
-            details={"reason": "Email already registered"}
+            details={"reason": "Email already registered"},
+            request=request
         )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="An account with this email address already exists."
+            detail="Email address is already registered."
         )
 
-    user_id = str(uuid.uuid4())
+    user_id = f"pat_{uuid.uuid4().hex[:10]}"
     hashed_pwd = get_password_hash(user_in.password)
 
     user_doc = {
         "_id": user_id,
         "email": user_in.email.lower(),
         "name": user_in.name,
-        "role": user_role,
         "hashed_password": hashed_pwd,
+        "role": user_role,
         "must_reset_password": False,
         "created_at": datetime.now(timezone.utc)
     }
 
     await db["users"].insert_one(user_doc)
 
-    # Initialize patient profile
-    profile_doc = {
-        "_id": str(uuid.uuid4()),
-        "user_id": user_id,
-        "age": 32,
-        "gender": "Other",
-        "blood_type": "O+",
-        "vitals": {
-            "blood_pressure_sys": 120,
-            "blood_pressure_dia": 80,
-            "heart_rate": 72,
-            "glucose_mg_dl": 95,
-            "bmi": 22.5,
-            "weight_kg": 68.0,
-            "height_cm": 175.0
-        },
-        "medical_history": ["New Patient Registration"]
-    }
-    await db["patients"].insert_one(profile_doc)
+    await db["patients"].insert_one({
+        "_id": user_id,
+        "name": user_in.name,
+        "email": user_in.email.lower(),
+        "created_at": datetime.now(timezone.utc)
+    })
 
     await log_audit_event(
         action="PATIENT_PUBLIC_SIGNUP",
         user_email=user_in.email.lower(),
         role=user_role,
         status_code=201,
-        details={"user_id": user_id}
+        details={"user_id": user_id},
+        request=request
     )
 
     token = create_access_token({"sub": user_id, "email": user_in.email.lower(), "role": user_role})
@@ -123,7 +113,8 @@ async def login(request: Request, response: Response, credentials: UserLogin):
             user_email=email_clean,
             role="unknown",
             status_code=401,
-            details={"email_attempted": email_clean, "reason": "Invalid credentials"}
+            details={"email_attempted": email_clean, "reason": "Invalid credentials"},
+            request=request
         )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -137,7 +128,8 @@ async def login(request: Request, response: Response, credentials: UserLogin):
         user_email=email_clean,
         role=user["role"],
         status_code=200,
-        details={"user_id": user["_id"], "must_reset_password": must_reset}
+        details={"user_id": user["_id"], "must_reset_password": must_reset},
+        request=request
     )
 
     token = create_access_token({"sub": user["_id"], "email": user["email"], "role": user["role"]})
@@ -162,6 +154,7 @@ async def login(request: Request, response: Response, credentials: UserLogin):
 
 @router.post("/reset-password")
 async def reset_password(
+    request: Request,
     reset_in: PasswordResetRequest,
     current_user: dict = Depends(get_current_user)
 ):
@@ -172,7 +165,8 @@ async def reset_password(
             user_email=current_user["email"],
             role=current_user["role"],
             status_code=400,
-            details={"reason": "Incorrect current password"}
+            details={"reason": "Incorrect current password"},
+            request=request
         )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -190,7 +184,8 @@ async def reset_password(
         user_email=current_user["email"],
         role=current_user["role"],
         status_code=200,
-        details={"user_id": current_user["_id"]}
+        details={"user_id": current_user["_id"]},
+        request=request
     )
 
     return {"message": "Password updated successfully. Forced reset flag cleared."}
