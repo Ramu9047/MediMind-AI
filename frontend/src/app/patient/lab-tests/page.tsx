@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useSearchParams } from 'next/navigation';
 import { fetchApi } from '@/lib/api';
 import { FlaskConical, FileText, CheckCircle2, AlertTriangle } from 'lucide-react';
+import FormattedMarkdown from '@/components/FormattedMarkdown';
 
 const POPULAR_LAB_PRESETS = [
   { name: 'Complete Blood Count (CBC)', note: 'Fasting not required. Routine blood health screening.' },
@@ -169,7 +170,7 @@ function LabTestsContent() {
                         <span className="font-bold text-tealPrimary dark:text-teal-400 flex items-center gap-1">
                           <CheckCircle2 className="w-3.5 h-3.5" /> AI Plain-Language Report Summary:
                         </span>
-                        <p className="text-ink dark:text-slate-300 leading-relaxed">{lab.ai_summary}</p>
+                        <FormattedMarkdown content={lab.ai_summary} />
                       </div>
 
                       {lab.abnormal_flags && lab.abnormal_flags.length > 0 && (

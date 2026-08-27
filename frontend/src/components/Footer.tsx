@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Activity, ShieldCheck, Heart, Sparkles } from 'lucide-react';
+import MediMindLogo from './MediMindLogo';
 import ECGPulseLine from './ECGPulseLine';
 
 export default function Footer() {
@@ -15,12 +15,9 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand */}
           <div className="space-y-3 md:col-span-1">
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-tealPrimary flex items-center justify-center text-white">
-                <Activity className="w-4 h-4" />
-              </div>
-              <span className="font-heading font-bold text-base text-ink dark:text-white">MediMind AI</span>
-            </div>
+            <Link href="/">
+              <MediMindLogo size="sm" showSubtitle={false} />
+            </Link>
             <p className="text-xs text-inkMuted leading-relaxed">
               Clinical healthcare coordination platform bridging statistical ML predictions, physician consultations, and lab diagnostics.
             </p>

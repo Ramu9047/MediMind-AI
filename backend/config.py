@@ -1,7 +1,9 @@
 import os
+from dotenv import load_dotenv
 from pydantic_settings import BaseSettings
 
 env_path = os.path.join(os.path.dirname(__file__), ".env")
+load_dotenv(env_path)
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "MediMind AI"

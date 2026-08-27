@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" fill="none">
+  <defs>
+    <!-- Background Radial Glass Orb -->
+    <radialGradient id="tabOrbBg" cx="35%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#2dd4bf" />
+      <stop offset="40%" stop-color="#0d9488" />
+      <stop offset="85%" stop-color="#0f766e" />
+      <stop offset="100%" stop-color="#042f2e" />
+    </radialGradient>
+
+    <!-- Glass Specular Highlight -->
+    <linearGradient id="tabGlassLight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.85" />
+      <stop offset="40%" stop-color="#ffffff" stop-opacity="0.15" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
+    </linearGradient>
+
+    <!-- Pulse Wave Glow Line -->
+    <linearGradient id="tabPulseGlow" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="50%" stop-color="#a7f3d0" />
+      <stop offset="100%" stop-color="#38bdf8" />
+    </linearGradient>
+  </defs>
+
+  <!-- Outer Cyan Ring -->
+  <circle cx="32" cy="32" r="29" fill="none" stroke="#2dd4bf" stroke-width="1.5" stroke-opacity="0.6" />
+
+  <!-- Main 3D Spherical Orb Body -->
+  <circle cx="32" cy="32" r="26" fill="url(#tabOrbBg)" />
+
+  <!-- Glass Specular Lens Highlight -->
+  <ellipse cx="32" cy="18" rx="16" ry="9" fill="url(#tabGlassLight)" />
+
+  <!-- Brain Hemisphere Neural Circuit Tracks -->
+  <path d="M 20 28 C 22 20, 42 20, 44 28" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="2 2" />
+  <circle cx="20" cy="28" r="2" fill="#ffffff" />
+  <circle cx="44" cy="28" r="2" fill="#38bdf8" />
+
+  <path d="M 18 36 C 20 44, 44 44, 46 36" stroke="#34d399" stroke-width="1.5" stroke-dasharray="2 2" />
+  <circle cx="18" cy="36" r="2" fill="#34d399" />
+  <circle cx="46" cy="36" r="2" fill="#ffffff" />
+
+  <!-- High-Contrast Heartbeat ECG Line at Sphere Core -->
+  <path d="M 10 32 H 19 L 24 20 L 32 44 L 39 23 L 44 32 H 54" 
+        stroke="url(#tabPulseGlow)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+
+  <!-- Core Glowing AI Node -->
+  <circle cx="32" cy="44" r="3" fill="#ffffff" />
+</svg>

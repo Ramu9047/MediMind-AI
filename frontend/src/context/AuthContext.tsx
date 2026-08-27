@@ -32,14 +32,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const savedUser = localStorage.getItem('medimind_user');
     if (savedUser) {
-      const parsed = JSON.parse(savedUser);
-      setUser(parsed);
-      if (parsed.must_reset_password) {
-        router.push('/auth/reset-password');
+      try {
+        const parsed = JSON.parse(savedUser);
+        setUser(parsed);
+        if (parsed.must_reset_password) {
+          router.push('/auth/reset-password');
+        }
+      } catch (e) {
+        console.error("Failed to parse stored user", e);
       }
     }
     setLoading(false);
-  }, [router]);
+  }, []);
 
   const login = async (email: string, password: string) => {
     const res = await fetch('/api/v1/auth/login', {

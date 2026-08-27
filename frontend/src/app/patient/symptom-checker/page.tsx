@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import ECGPulseLine from '@/components/ECGPulseLine';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import FormattedMarkdown from '@/components/FormattedMarkdown';
 
 const ALL_SYMPTOMS = [
   'itching', 'skin_rash', 'nodal_skin_eruptions', 'continuous_sneezing', 'shivering', 'chills',
@@ -481,8 +482,8 @@ export default function SymptomCheckerPage() {
                   <Sparkles className="w-4 h-4 text-tealPrimary" />
                   <span>AI Clinical Explanation</span>
                 </h4>
-                <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs text-ink dark:text-slate-200 leading-relaxed space-y-2 whitespace-pre-line">
-                  {prediction.llm_explanation || prediction.explanation}
+                <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                  <FormattedMarkdown content={prediction.llm_explanation || prediction.explanation} />
                 </div>
               </div>
 

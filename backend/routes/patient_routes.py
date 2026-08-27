@@ -6,6 +6,28 @@ from database import get_database
 
 router = APIRouter(prefix="/patient", tags=["Patient Health Record & Timeline"])
 
+def serialize_doc(doc):
+    if not doc:
+        return doc
+    if isinstance(doc, list):
+        return [serialize_doc(item) for item in doc]
+    if isinstance(doc, dict):
+        new_doc = {}
+        for k, v in doc.items():
+            if k == "_id":
+                new_doc["id"] = str(v)
+                new_doc["_id"] = str(v)
+            elif isinstance(v, dict):
+                new_doc[k] = serialize_doc(v)
+            elif isinstance(v, list):
+                new_doc[k] = [serialize_doc(item) for item in v]
+            elif type(v).__name__ == "ObjectId":
+                new_doc[k] = str(v)
+            else:
+                new_doc[k] = v
+        return new_doc
+    return doc
+
 async def is_doctor_assigned_to_patient(doctor_id: str, patient_id: str, db) -> bool:
     """Verifies that an appointment exists establishing a doctor-patient clinical relationship."""
     if doctor_id == "doc_demo_01" and patient_id == "pat_demo_01":
@@ -30,7 +52,7 @@ async def get_patient_timeline(patient_id: str = None, current_user: dict = Depe
 
     entries = await db["timeline"].find({"patient_id": target_id}).to_list(length=100)
     entries.sort(key=lambda x: str(x.get("timestamp", "")), reverse=True)
-    return entries
+    return serialize_doc(entries)
 
 @router.get("/vitals")
 async def get_patient_vitals(patient_id: str = None, current_user: dict = Depends(get_current_user)):
@@ -58,7 +80,7 @@ async def get_patient_vitals(patient_id: str = None, current_user: dict = Depend
             "weight_kg": 68.0,
             "height_cm": 175.0
         }
-    return patient.get("vitals", {})
+    return serialize_doc(patient.get("vitals", {}))
 
 @router.put("/vitals")
 async def update_patient_vitals(vitals_in: PatientVitals, current_user: dict = Depends(get_current_user)):
@@ -94,7 +116,7 @@ async def list_all_patients(current_user: dict = Depends(get_current_user)):
             "blood_type": profile.get("blood_type", "O+") if profile else "O+",
             "vitals": profile.get("vitals", {}) if profile else {}
         })
-    return result
+    return serialize_doc(result)
 
 @router.get("/{patient_id}/record")
 async def get_patient_full_record(patient_id: str, current_user: dict = Depends(get_current_user)):
@@ -125,7 +147,7 @@ async def get_patient_full_record(patient_id: str, current_user: dict = Depends(
 
     timeline.sort(key=lambda x: str(x.get("timestamp", "")), reverse=True)
 
-    return {
+    return serialize_doc({
         "patient_info": {
             "id": user["_id"],
             "name": user["name"],
@@ -139,5 +161,5 @@ async def get_patient_full_record(patient_id: str, current_user: dict = Depends(
         "predictions": predictions,
         "lab_tests": lab_tests,
         "appointments": appointments
-    }
+    })
 

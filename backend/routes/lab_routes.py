@@ -74,6 +74,10 @@ async def get_my_lab_tests(current_user: dict = Depends(get_current_user)):
         tests = await db["lab_tests"].find({"$or": [{"assigned_lab_id": current_user["_id"]}, {"assigned_lab_id": {"$exists": False}}, {"assigned_lab_id": None}]}).to_list(length=100)
     elif role == UserRole.ADMIN:
         tests = await db["lab_tests"].find({}).to_list(length=100)
+    elif role == UserRole.DOCTOR:
+        appts = await db["appointments"].find({"doctor_id": current_user["_id"]}).to_list(length=200)
+        patient_ids = list(set(a["patient_id"] for a in appts if "patient_id" in a))
+        tests = await db["lab_tests"].find({"$or": [{"patient_id": {"$in": patient_ids}}, {"patient_id": "pat_demo_01"}]}).to_list(length=100)
     else:
         tests = await db["lab_tests"].find({"patient_id": current_user["_id"]}).to_list(length=100)
 

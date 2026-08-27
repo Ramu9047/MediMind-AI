@@ -94,38 +94,56 @@ export default function LabDashboardPage() {
 
                 {t.notes && <p className="text-xs text-inkMuted italic">Notes: {t.notes}</p>}
 
-                {/* Sample Status Workflow Control */}
-                <div className="pt-2 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2 flex-wrap text-xs">
-                  <span className="text-inkMuted font-semibold font-mono">Update Status:</span>
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      onClick={() => handleStatusChange(t.id, 'Sample Collected')}
-                      className={`px-2 py-1 rounded text-[11px] font-mono font-semibold ${t.status === 'Sample Collected' ? 'btn-teal' : 'btn-outline'}`}
-                    >
-                      Sample Collected
-                    </button>
-                    <button
-                      onClick={() => handleStatusChange(t.id, 'Processing')}
-                      className={`px-2 py-1 rounded text-[11px] font-mono font-semibold ${t.status === 'Processing' ? 'btn-teal' : 'btn-outline'}`}
-                    >
-                      Processing
-                    </button>
+                {/* Sample Status Linear Workflow Control */}
+                {t.status !== 'Completed' && !t.ai_summary && (
+                  <div className="pt-2 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2 flex-wrap text-xs">
+                    <span className="text-inkMuted font-semibold font-mono">Status Action:</span>
+                    <div className="flex items-center gap-1.5">
+                      {t.status === 'Ordered' || t.status === 'Pending' ? (
+                        <button
+                          onClick={() => handleStatusChange(t.id, 'Sample Collected')}
+                          className="btn-teal text-[11px] py-1 px-3 font-mono font-semibold flex items-center gap-1"
+                        >
+                          <span>Mark Sample Collected</span>
+                        </button>
+                      ) : t.status === 'Sample Collected' ? (
+                        <button
+                          onClick={() => handleStatusChange(t.id, 'Processing')}
+                          className="btn-teal text-[11px] py-1 px-3 font-mono font-semibold flex items-center gap-1"
+                        >
+                          <span>Start Processing</span>
+                        </button>
+                      ) : (
+                        <span className="px-2.5 py-1 rounded-md bg-teal-500/10 text-tealPrimary font-mono font-semibold text-[11px]">
+                          ✓ Processing in Progress
+                        </span>
+                      )}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 <div className="pt-2 flex items-center justify-between">
-                  <button
-                    onClick={() => setSelectedTest(t)}
-                    className="btn-teal text-xs py-1.5 px-3 flex items-center gap-1.5"
-                  >
-                    <Upload className="w-3.5 h-3.5" />
-                    <span>Upload Report PDF & AI Analyze</span>
-                  </button>
-
-                  {t.ai_summary && (
-                    <span className="text-[11px] text-tealPrimary dark:text-teal-400 font-mono font-semibold flex items-center gap-1">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> Published
-                    </span>
+                  {t.ai_summary || t.status === 'Completed' ? (
+                    <div className="flex items-center justify-between w-full">
+                      <span className="text-[11px] text-tealPrimary dark:text-teal-400 font-mono font-semibold flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-teal-500/10 border border-teal-500/20">
+                        <CheckCircle2 className="w-4 h-4" /> Report Published &amp; AI Analyzed
+                      </span>
+                      <button
+                        onClick={() => setSelectedTest(t)}
+                        className="text-xs text-inkMuted hover:text-tealPrimary underline flex items-center gap-1"
+                      >
+                        <Upload className="w-3 h-3" />
+                        <span>Re-upload / Amend</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setSelectedTest(t)}
+                      className="btn-teal text-xs py-1.5 px-3 flex items-center gap-1.5"
+                    >
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>Upload Report PDF &amp; AI Analyze</span>
+                    </button>
                   )}
                 </div>
               </div>

@@ -14,6 +14,8 @@ export default function ProtectedRoute({ children, allowedRoles }: ProtectedRout
   const { user, loading } = useAuth();
   const router = useRouter();
 
+  const rolesKey = allowedRoles ? allowedRoles.join(',') : '';
+
   useEffect(() => {
     if (!loading) {
       if (!user) {
@@ -26,7 +28,7 @@ export default function ProtectedRoute({ children, allowedRoles }: ProtectedRout
         else router.push('/');
       }
     }
-  }, [user, loading, allowedRoles, router]);
+  }, [user, loading, rolesKey, router]);
 
   if (loading || !user || (allowedRoles && !allowedRoles.includes(user.role))) {
     return (

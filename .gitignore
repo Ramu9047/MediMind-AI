@@ -28,4 +28,5 @@ scratch_test_*.py
 
 backend/data/Datasets_Chest_xrays/
 backend/data/in_memory_store.json
+*.zip
 

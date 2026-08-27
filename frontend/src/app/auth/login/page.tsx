@@ -7,9 +7,10 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Lock, Mail, Activity } from 'lucide-react';
 
-export default function LoginPage() {
+import MediMindLogo from '@/components/MediMindLogo';
 
-  const { login } = useAuth();
+export default function LoginPage() {
+  const { user, login } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const isExpired = searchParams?.get('expired') === 'true';
@@ -19,6 +20,16 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Instant redirect if already logged in
+  React.useEffect(() => {
+    if (user) {
+      const target = user.role === 'admin' ? '/admin/dashboard'
+                   : user.role === 'doctor' ? '/doctor/dashboard'
+                   : user.role === 'lab' ? '/lab/dashboard'
+                   : '/patient/dashboard';
+      router.replace(target);
+    }
+  }, [user, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,29 +38,21 @@ export default function LoginPage() {
     try {
       const loggedUser = await login(email, password);
       const role = loggedUser?.role || (email.includes('admin') ? 'admin' : email.includes('doctor') ? 'doctor' : email.includes('lab') ? 'lab' : 'patient');
-      if (role === 'admin') {
-        router.push('/admin/dashboard');
-      } else if (role === 'doctor') {
-        router.push('/doctor/dashboard');
-      } else if (role === 'lab') {
-        router.push('/lab/dashboard');
-      } else {
-        router.push('/patient/dashboard');
-      }
+      const target = role === 'admin' ? '/admin/dashboard'
+                   : role === 'doctor' ? '/doctor/dashboard'
+                   : role === 'lab' ? '/lab/dashboard'
+                   : '/patient/dashboard';
+      window.location.href = target;
     } catch (err: any) {
       setError(err.message || 'Invalid credentials');
-    } finally {
       setLoading(false);
     }
   };
 
   return (
     <div className="max-w-md mx-auto py-12 space-y-6 animate-card-rise">
-      <div className="text-center space-y-2">
-        <div className="inline-flex w-12 h-12 rounded-2xl bg-tealPrimary text-white items-center justify-center shadow-md mb-2">
-          <Activity className="w-6 h-6 stroke-[2.5]" />
-        </div>
-        <h1 className="text-2xl font-heading font-extrabold text-ink dark:text-white">Log in to MediMind AI</h1>
+      <div className="text-center space-y-3 flex flex-col items-center">
+        <MediMindLogo size="lg" showSubtitle={false} />
         <p className="text-xs text-inkMuted">Access your clinical timeline, physician queue, or lab portal</p>
       </div>
 

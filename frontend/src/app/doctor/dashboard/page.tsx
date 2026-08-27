@@ -83,7 +83,7 @@ export default function DoctorDashboardPage() {
 
                   <div className="pt-2 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
                     <Link
-                      href={`/doctor/patient/${appt.patient_id}`}
+                      href={`/doctor/records/${appt.patient_id}`}
                       className="text-xs text-tealPrimary hover:underline flex items-center gap-1 font-semibold"
                     >
                       <span>View Complete Patient History</span>
@@ -91,21 +91,34 @@ export default function DoctorDashboardPage() {
                     </Link>
 
                     <div className="flex items-center gap-2">
-                      {appt.status !== 'Confirmed' && (
-                        <button
-                          onClick={() => handleUpdateStatus(appt.id, 'Confirmed')}
-                          className="btn-teal text-[11px] py-1 px-2.5"
-                        >
-                          Confirm
-                        </button>
+                      {appt.status === 'Pending' && (
+                        <>
+                          <button
+                            onClick={() => handleUpdateStatus(appt.id, 'Confirmed')}
+                            className="btn-teal text-[11px] py-1 px-2.5"
+                          >
+                            Confirm
+                          </button>
+                          <button
+                            onClick={() => handleUpdateStatus(appt.id, 'Completed')}
+                            className="btn-outline text-[11px] py-1 px-2.5"
+                          >
+                            Complete
+                          </button>
+                        </>
                       )}
-                      {appt.status !== 'Completed' && (
+                      {appt.status === 'Confirmed' && (
                         <button
                           onClick={() => handleUpdateStatus(appt.id, 'Completed')}
-                          className="btn-outline text-[11px] py-1 px-2.5"
+                          className="btn-teal text-[11px] py-1 px-2.5"
                         >
                           Complete
                         </button>
+                      )}
+                      {appt.status === 'Completed' && (
+                        <span className="text-[11px] text-tealPrimary font-mono font-semibold flex items-center gap-1 px-2 py-0.5 rounded-md bg-teal-500/10 border border-teal-500/20">
+                          ✓ Finalized
+                        </span>
                       )}
                     </div>
                   </div>
@@ -134,7 +147,7 @@ export default function DoctorDashboardPage() {
                   <p className="text-xs text-inkMuted">Age: {pat.age} | Blood: {pat.blood_type}</p>
                 </div>
                 <Link
-                  href={`/doctor/patient/${pat.id}`}
+                  href={`/doctor/records/${pat.id}`}
                   className="btn-outline text-xs py-1.5 px-3"
                 >
                   View Record

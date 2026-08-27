@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { Lock, Mail, User, Activity, ShieldCheck, UserCheck } from 'lucide-react';
 
 export default function SignupPage() {
-  const { signup } = useAuth();
+  const { user, signup } = useAuth();
   const router = useRouter();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -15,16 +15,21 @@ export default function SignupPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  React.useEffect(() => {
+    if (user) {
+      router.replace('/patient/dashboard');
+    }
+  }, [user, router]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
     try {
       await signup(name, email, 'patient', password);
-      router.push('/patient/symptom-checker');
+      window.location.href = '/patient/symptom-checker';
     } catch (err: any) {
       setError(err.message || 'Signup failed');
-    } finally {
       setLoading(false);
     }
   };

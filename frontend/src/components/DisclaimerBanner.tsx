@@ -9,19 +9,16 @@ export default function DisclaimerBanner() {
   return (
     <aside aria-label="Educational Disclaimer" className="bg-amber-500/10 dark:bg-amber-500/15 border-b border-amber-500/25 px-4 py-1.5 text-xs text-amber-900 dark:text-amber-200 font-medium transition-all">
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 min-w-0 flex-1">
-          <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
-          <p className="truncate text-xs">
+        <div className="flex items-start sm:items-center gap-2 min-w-0 flex-1 py-0.5">
+          <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5 sm:mt-0" />
+          <p className={`text-xs ${expanded ? 'leading-relaxed text-amber-950 dark:text-amber-100' : 'truncate text-amber-900/90 dark:text-amber-200/90'}`}>
             <strong className="font-semibold uppercase tracking-wider text-[11px] mr-1">Educational Demo Only:</strong>
-            {expanded ? (
-              <span>
-                MediMind AI provides statistical educational information only and is not a substitute for professional medical advice, diagnosis, or treatment. Medicine reference data is sourced from FDA/RxNorm public databases and does not constitute a prescription. Always consult a licensed healthcare provider.
-              </span>
-            ) : (
-              <span className="text-amber-800/90 dark:text-amber-300/90">
-                MediMind AI provides statistical educational information only and is not a substitute for professional medical advice, diagnosis, or treatment.
-              </span>
-            )}
+            <span>
+              MediMind AI provides statistical educational information only and is not a substitute for professional medical advice, diagnosis, or treatment.
+              {expanded && (
+                <> Medicine reference data is sourced from FDA/RxNorm public databases and does not constitute a prescription. Always consult a licensed healthcare provider for personal health decisions.</>
+              )}
+            </span>
           </p>
         </div>
         <button

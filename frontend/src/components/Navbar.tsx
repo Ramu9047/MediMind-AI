@@ -23,7 +23,11 @@ import {
   Menu,
   X,
   LayoutDashboard,
+  Sparkles,
+  LineChart,
 } from 'lucide-react';
+
+import MediMindLogo from '@/components/MediMindLogo';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -126,16 +130,8 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
 
         {/* Logo Block */}
-        <Link href="/" className="flex items-center gap-2.5 group shrink-0">
-          <div className="w-9 h-9 rounded-xl bg-tealPrimary flex items-center justify-center text-white shadow-sm transition-transform group-hover:scale-105">
-            <Activity className="w-5 h-5 stroke-[2.5]" />
-          </div>
-          <div>
-            <div className="font-heading font-bold text-base sm:text-lg text-ink dark:text-white tracking-tight flex items-center gap-1">
-              MediMind <span className="text-tealPrimary font-normal text-xs sm:text-sm">AI</span>
-            </div>
-            <p className="hidden xl:block text-[9.5px] text-inkMuted uppercase tracking-wider font-medium font-sans">Clinical Coordination</p>
-          </div>
+        <Link href="/">
+          <MediMindLogo />
         </Link>
 
         {/* Desktop Grouped Navigation (>= 900px) */}
@@ -165,7 +161,7 @@ export default function Navbar() {
                     : 'text-inkMuted hover:text-ink dark:hover:text-white'
                 }`}
               >
-                <Activity className="w-3.5 h-3.5 text-tealPrimary" />
+                <Sparkles className="w-3.5 h-3.5 text-tealPrimary" />
                 <span>Symptom Evaluator</span>
               </Link>
 
@@ -306,7 +302,7 @@ export default function Navbar() {
                         pathname === '/patient/dashboard' ? 'text-tealPrimary font-bold bg-teal-500/5' : 'text-ink dark:text-slate-200'
                       }`}
                     >
-                      <Activity className="w-4 h-4 text-tealPrimary shrink-0" />
+                      <LineChart className="w-4 h-4 text-tealPrimary shrink-0" />
                       <span>Vitals &amp; Timeline</span>
                     </Link>
 
@@ -339,20 +335,24 @@ export default function Navbar() {
                 {isDoctor && (
                   <>
                     <Link
-                      href="/patient/dashboard"
+                      href="/doctor/timeline"
                       role="menuitem"
                       onClick={() => setRecordsOpen(false)}
-                      className="flex items-center gap-2.5 px-4 py-2 text-xs text-ink dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60"
+                      className={`flex items-center gap-2.5 px-4 py-2 text-xs hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors ${
+                        pathname === '/doctor/timeline' ? 'text-tealPrimary font-bold bg-teal-500/5' : 'text-ink dark:text-slate-200'
+                      }`}
                     >
-                      <Activity className="w-4 h-4 text-tealPrimary shrink-0" />
+                      <Clock className="w-4 h-4 text-tealPrimary shrink-0" />
                       <span>Patient Timeline Review</span>
                     </Link>
 
                     <Link
-                      href="/patient/lab-tests"
+                      href="/doctor/lab-results"
                       role="menuitem"
                       onClick={() => setRecordsOpen(false)}
-                      className="flex items-center gap-2.5 px-4 py-2 text-xs text-ink dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60"
+                      className={`flex items-center gap-2.5 px-4 py-2 text-xs hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors ${
+                        pathname === '/doctor/lab-results' ? 'text-purple-600 font-bold bg-purple-500/5' : 'text-ink dark:text-slate-200'
+                      }`}
                     >
                       <FlaskConical className="w-4 h-4 text-purple-500 shrink-0" />
                       <span>Diagnostic Lab Results</span>
@@ -490,7 +490,7 @@ export default function Navbar() {
                     pathname.includes('/symptom-checker') ? 'bg-mistTeal dark:bg-slate-800 text-tealPrimary font-bold' : 'text-ink dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
                   }`}
                 >
-                  <Activity className="w-4 h-4 text-tealPrimary" />
+                  <Sparkles className="w-4 h-4 text-tealPrimary" />
                   <span>Symptom Evaluator</span>
                 </Link>
 
@@ -601,7 +601,7 @@ export default function Navbar() {
                     pathname === '/patient/dashboard' ? 'bg-mistTeal dark:bg-slate-800 text-tealPrimary font-bold' : 'text-ink dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
                   }`}
                 >
-                  <Activity className="w-4 h-4 text-tealPrimary" />
+                  <LineChart className="w-4 h-4 text-tealPrimary" />
                   <span>Vitals &amp; Timeline</span>
                 </Link>
 
@@ -632,18 +632,22 @@ export default function Navbar() {
             {isDoctor && (
               <>
                 <Link
-                  href="/patient/dashboard"
+                  href="/doctor/timeline"
                   onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs text-ink dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium"
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-colors ${
+                    pathname === '/doctor/timeline' ? 'bg-mistTeal dark:bg-slate-800 text-tealPrimary font-bold' : 'text-ink dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  }`}
                 >
-                  <Activity className="w-4 h-4 text-tealPrimary" />
+                  <Clock className="w-4 h-4 text-tealPrimary" />
                   <span>Patient Timeline Review</span>
                 </Link>
 
                 <Link
-                  href="/patient/lab-tests"
+                  href="/doctor/lab-results"
                   onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs text-ink dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium"
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-colors ${
+                    pathname === '/doctor/lab-results' ? 'bg-purple-500/10 text-purple-600 font-bold' : 'text-ink dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  }`}
                 >
                   <FlaskConical className="w-4 h-4 text-purple-500" />
                   <span>Diagnostic Lab Results</span>
