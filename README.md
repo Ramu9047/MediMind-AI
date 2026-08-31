@@ -4,6 +4,8 @@
 [![API Backend](https://img.shields.io/badge/Backend%20API-Render-46E3B7?style=for-the-badge&logo=render&logoColor=black)](https://medimind-ai-ikpa.onrender.com)
 [![Database](https://img.shields.io/badge/Database-MongoDB%20Atlas-47A248?style=for-the-badge&logo=mongodb&logoColor=white)](https://cloud.mongodb.com)
 
+![MediMind AI Animated Platform Walkthrough](docs/demo/medimind-walkthrough.gif)
+
 > **CRITICAL MEDICAL DISCLAIMER (NON-NEGOTIABLE):**
 > **MediMind AI provides educational information only and is not a substitute for professional medical advice, diagnosis, or treatment. Medicine information is sourced from US NLM RxNorm & openFDA public datasets and does not constitute a medical prescription.**
 >
