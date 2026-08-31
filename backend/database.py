@@ -23,7 +23,7 @@ async def connect_to_mongo():
         await db_wrapper.client.admin.command('ping')
         db_wrapper.db = db_wrapper.client[settings.DATABASE_NAME]
         db_wrapper.is_connected = True
-        logger.info(f"Connected to MongoDB database: {settings.DATABASE_NAME}")
+        logger.info(f"Successfully connected to MongoDB Atlas database: {settings.DATABASE_NAME}")
     except Exception as e:
         logger.warning(f"MongoDB connection failed: {e}. Operating with persistent in-memory file store for demonstration.")
         db_wrapper.is_connected = False

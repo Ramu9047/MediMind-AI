@@ -83,7 +83,7 @@ MediMind AI
 
 ---
 
-## 🗄️ MongoDB Collections Schema
+## 🗄️ MongoDB Atlas Collections Schema
 
 ### `audit_events` Collection
 ```json
@@ -138,12 +138,14 @@ OK
 
 ## 🚀 Local Quickstart & Setup Instructions
 
-### 1. Backend Setup (FastAPI)
+### 1. Backend Setup (FastAPI & MongoDB Atlas)
 ```bash
 cd backend
 python -m venv venv
 .\venv\Scripts\activate
 pip install -r requirements.txt
+# Set your MongoDB Atlas connection URI in backend/.env:
+# MONGODB_URI=mongodb+srv://<username>:<password>@cluster0.mongodb.net/medimind_db?retryWrites=true&w=majority
 python main.py
 ```
 *Backend runs on `http://127.0.0.1:8000`. Interactive docs at `http://127.0.0.1:8000/docs`.*
