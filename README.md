@@ -58,7 +58,7 @@
 *Free-text NLP symptom intake mapping into 132 canonical symptoms and 41-disease Random Forest probability classifier.*
 
 ### 4. Medicine Information Hub (RxNorm & openFDA)
-![Medicine Information Hub](docs/screenshots/medicine-hub.png)
+![Medicine Information Hub](docs/screenshots/medicine-information-hub.png)
 *Real-time RxNorm & openFDA drug label integration featuring autocomplete search, pairwise interaction checking, and side-effect warnings.*
 
 ### 5. Doctor Clinical Dashboard
