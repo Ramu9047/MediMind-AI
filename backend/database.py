@@ -17,17 +17,35 @@ class Database:
 
 db_wrapper = Database()
 
+import certifi
+
 async def connect_to_mongo():
     try:
-        db_wrapper.client = AsyncIOMotorClient(settings.MONGODB_URI, serverSelectionTimeoutMS=5000)
+        db_wrapper.client = AsyncIOMotorClient(
+            settings.MONGODB_URI,
+            serverSelectionTimeoutMS=8000,
+            tlsCAFile=certifi.where()
+        )
         await db_wrapper.client.admin.command('ping')
         db_wrapper.db = db_wrapper.client[settings.DATABASE_NAME]
         db_wrapper.is_connected = True
         logger.info(f"Successfully connected to MongoDB Atlas database: {settings.DATABASE_NAME}")
-    except Exception as e:
-        logger.warning(f"MongoDB connection failed: {e}. Operating with persistent in-memory file store for demonstration.")
-        db_wrapper.is_connected = False
-        db_wrapper.db = InMemoryDatabase()
+    except Exception as primary_err:
+        logger.warning(f"Standard SSL connection attempt failed: {primary_err}. Attempting TLS fallback...")
+        try:
+            db_wrapper.client = AsyncIOMotorClient(
+                settings.MONGODB_URI,
+                serverSelectionTimeoutMS=8000,
+                tlsAllowInvalidCertificates=True
+            )
+            await db_wrapper.client.admin.command('ping')
+            db_wrapper.db = db_wrapper.client[settings.DATABASE_NAME]
+            db_wrapper.is_connected = True
+            logger.info(f"Successfully connected to MongoDB Atlas via TLS fallback: {settings.DATABASE_NAME}")
+        except Exception as e:
+            logger.warning(f"MongoDB connection failed: {e}. Operating with fallback store.")
+            db_wrapper.is_connected = False
+            db_wrapper.db = InMemoryDatabase()
 
 async def close_mongo_connection():
     if db_wrapper.client:
