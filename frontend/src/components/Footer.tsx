@@ -84,8 +84,10 @@ export default function Footer() {
 
         <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-800/60 flex flex-col sm:flex-row items-center justify-between text-xs text-inkMuted gap-4">
           <p>© {new Date().getFullYear()} MediMind AI Platform. Built with clinical precision.</p>
-          <div className="flex items-center gap-4">
-            <span className="font-mono text-[11px] text-tealPrimary font-medium">v1.2.0-clinical</span>
+          <div className="flex items-center gap-3 font-mono text-xs">
+            <span>Designed &amp; Developed By <strong className="text-tealPrimary dark:text-teal-400 font-bold uppercase tracking-wider">RAMAKRISHNAN S</strong></span>
+            <span className="text-slate-300 dark:text-slate-700">|</span>
+            <span className="text-[11px] text-tealPrimary font-medium">v1.2.0-clinical</span>
           </div>
         </div>
       </div>
