@@ -9,6 +9,13 @@ export async function fetchApi<T = any>(endpoint: string, options: RequestInit =
     headers['Content-Type'] = 'application/json';
   }
 
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem('medimind_token');
+    if (token && !headers['Authorization']) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+  }
+
   const response = await fetch(`${API_BASE}${endpoint}`, {
     ...options,
     credentials: 'include',
@@ -17,6 +24,7 @@ export async function fetchApi<T = any>(endpoint: string, options: RequestInit =
 
   if (response.status === 401 && typeof window !== 'undefined') {
     localStorage.removeItem('medimind_user');
+    localStorage.removeItem('medimind_token');
     if (!window.location.pathname.includes('/auth/login')) {
       window.location.href = '/auth/login?expired=true';
     }

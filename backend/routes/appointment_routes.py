@@ -1,9 +1,10 @@
 import uuid
 from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from models import AppointmentCreate, AppointmentResponse, AppointmentStatus, UserRole
 from auth import get_current_user, require_role
 from database import get_database
+from services.audit_service import log_audit_event
 
 router = APIRouter(prefix="/appointments", tags=["Appointments"])
 
@@ -161,6 +162,7 @@ async def get_my_appointments(current_user: dict = Depends(get_current_user)):
 
 @router.put("/{appt_id}/status")
 async def update_appointment_status(
+    request: Request,
     appt_id: str,
     status_val: str,
     current_user: dict = Depends(require_role([UserRole.DOCTOR, UserRole.ADMIN]))
@@ -183,13 +185,42 @@ async def update_appointment_status(
     if not appt:
         raise HTTPException(status_code=404, detail="Appointment not found")
 
-    if current_user.get("role") == UserRole.DOCTOR and appt.get("doctor_id") != current_user["_id"]:
+    user_role = current_user.get("role")
+    user_id = str(current_user.get("_id", ""))
+    appt_doc_id = str(appt.get("doctor_id", ""))
+
+    if user_role == UserRole.DOCTOR and appt_doc_id != user_id:
+        await log_audit_event(
+            action="APPOINTMENT_STATUS_FORBIDDEN",
+            user_email=current_user.get("email", "unknown"),
+            role=user_role,
+            status_code=403,
+            details={"appt_id": appt_id, "appt_doctor_id": appt_doc_id, "user_id": user_id},
+            request=request
+        )
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access forbidden: You can only update status for appointments assigned to you."
         )
 
     await db["appointments"].update_one({"_id": appt_id}, {"$set": {"status": status_val}})
+
+    # Synchronize timeline status
+    if appt.get("patient_id"):
+        await db["timeline"].update_many(
+            {"patient_id": appt["patient_id"], "event_type": "Doctor Appointment"},
+            {"$set": {"status_badge": status_val}}
+        )
+
+    await log_audit_event(
+        action="APPOINTMENT_STATUS_UPDATED",
+        user_email=current_user.get("email", "unknown"),
+        role=user_role,
+        status_code=200,
+        details={"appointment_id": appt_id, "new_status": status_val},
+        request=request
+    )
+
     return {"message": f"Appointment status updated to {status_val}"}
 
 

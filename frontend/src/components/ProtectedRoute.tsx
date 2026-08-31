@@ -15,22 +15,24 @@ export default function ProtectedRoute({ children, allowedRoles }: ProtectedRout
   const router = useRouter();
 
   const rolesKey = allowedRoles ? allowedRoles.join(',') : '';
+  const isAuthorized = Boolean(user && (!allowedRoles || allowedRoles.includes(user.role)));
 
   useEffect(() => {
     if (!loading) {
       if (!user) {
-        router.push('/auth/login');
+        router.replace('/auth/login');
       } else if (allowedRoles && !allowedRoles.includes(user.role)) {
-        if (user.role === 'doctor') router.push('/doctor/dashboard');
-        else if (user.role === 'patient') router.push('/patient/dashboard');
-        else if (user.role === 'lab') router.push('/lab/dashboard');
-        else if (user.role === 'admin') router.push('/admin/dashboard');
-        else router.push('/');
+        const target = user.role === 'doctor' ? '/doctor/dashboard'
+                     : user.role === 'patient' ? '/patient/dashboard'
+                     : user.role === 'lab' ? '/lab/dashboard'
+                     : user.role === 'admin' ? '/admin/dashboard'
+                     : '/';
+        router.replace(target);
       }
     }
   }, [user, loading, rolesKey, router]);
 
-  if (loading || !user || (allowedRoles && !allowedRoles.includes(user.role))) {
+  if (loading || !isAuthorized) {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center space-y-4 text-center">
         <div className="w-12 h-12 rounded-2xl bg-mistTeal dark:bg-slate-800 text-tealPrimary flex items-center justify-center animate-pulse">

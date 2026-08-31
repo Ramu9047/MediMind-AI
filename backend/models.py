@@ -38,6 +38,19 @@ class PasswordResetRequest(BaseModel):
     current_password: str
     new_password: str
 
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+class ForgotPasswordReset(BaseModel):
+    email: EmailStr
+    reset_code: str
+    new_password: str
+
+    @field_validator("new_password")
+    @classmethod
+    def validate_new_pwd(cls, v: str) -> str:
+        return validate_password_strength(v)
+
 class UserResponse(UserBase):
     id: str
     specialization: Optional[str] = None

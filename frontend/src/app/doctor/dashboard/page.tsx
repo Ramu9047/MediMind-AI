@@ -22,8 +22,8 @@ export default function DoctorDashboardPage() {
     try {
       await fetchApi(`/appointments/${apptId}/status?status_val=${newStatus}`, { method: 'PUT' });
       setAppointments(appointments.map((a) => (a.id === apptId ? { ...a, status: newStatus } : a)));
-    } catch (err) {
-      alert('Failed to update status');
+    } catch (err: any) {
+      alert(err.message || 'Failed to update status');
     }
   };
 

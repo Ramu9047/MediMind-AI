@@ -3,6 +3,9 @@ const backendUrl = process.env.BACKEND_URL || 'http://127.0.0.1:8000';
 
 const nextConfig = {
   reactStrictMode: true,
+  experimental: {
+    optimizePackageImports: ['lucide-react', 'recharts', 'framer-motion'],
+  },
   async rewrites() {
     return [
       {

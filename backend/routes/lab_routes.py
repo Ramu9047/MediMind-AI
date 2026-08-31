@@ -171,14 +171,14 @@ async def upload_lab_report(
             await db["lab_tests"].update_one({"_id": test_id}, {"$set": {"assigned_lab_id": current_user["_id"]}})
 
 
-    ALLOWED_EXTENSIONS = {".pdf", ".png", ".jpg", ".jpeg", ".webp"}
+    ALLOWED_EXTENSIONS = {".pdf", ".png", ".jpg", ".jpeg", ".webp", ".txt", ".doc", ".docx"}
     MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
 
     file_ext = "." + file.filename.lower().split(".")[-1] if "." in file.filename else ""
     if file_ext not in ALLOWED_EXTENSIONS:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Unsupported file format '{file_ext}'. Allowed formats are PDF, PNG, JPG, JPEG, and WEBP."
+            detail=f"Unsupported file format '{file_ext}'. Allowed formats are PDF, PNG, JPG, JPEG, WEBP, TXT, DOC, and DOCX."
         )
 
     file_bytes = await file.read()

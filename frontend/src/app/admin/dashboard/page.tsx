@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { fetchApi } from '@/lib/api';
-import { ShieldAlert, ShieldCheck, Lock, Activity, Users, FileText, CalendarCheck, UserPlus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ShieldAlert, ShieldCheck, Lock, Activity, Users, FileText, CalendarCheck, UserPlus, ChevronLeft, ChevronRight, Eye, EyeOff } from 'lucide-react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 
 export default function AdminDashboardPage() {
@@ -20,6 +20,7 @@ export default function AdminDashboardPage() {
   const [staffName, setStaffName] = useState('');
   const [staffEmail, setStaffEmail] = useState('');
   const [staffPassword, setStaffPassword] = useState('');
+  const [showStaffPassword, setShowStaffPassword] = useState(false);
   const [staffRole, setStaffRole] = useState<'doctor' | 'lab'>('doctor');
   const [staffSpec, setStaffSpec] = useState('');
   const [staffMsg, setStaffMsg] = useState('');
@@ -207,14 +208,25 @@ export default function AdminDashboardPage() {
 
           <div>
             <label className="block text-xs font-mono font-semibold uppercase text-inkMuted mb-1">Temporary Password (Forces Reset)</label>
-            <input
-              type="password"
-              required
-              value={staffPassword}
-              onChange={(e) => setStaffPassword(e.target.value)}
-              placeholder="••••••••"
-              className="w-full p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-ink dark:text-white focus:outline-none focus:border-tealPrimary"
-            />
+            <div className="relative">
+              <input
+                type={showStaffPassword ? 'text' : 'password'}
+                required
+                value={staffPassword}
+                onChange={(e) => setStaffPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full p-2.5 pr-10 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-ink dark:text-white focus:outline-none focus:border-tealPrimary"
+              />
+              <button
+                type="button"
+                onClick={() => setShowStaffPassword(!showStaffPassword)}
+                className="absolute right-3 top-2.5 text-inkMuted hover:text-ink dark:hover:text-white transition-colors"
+                title={showStaffPassword ? 'Hide password' : 'Show password'}
+                aria-label={showStaffPassword ? 'Hide password' : 'Show password'}
+              >
+                {showStaffPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
           </div>
 
           <div>

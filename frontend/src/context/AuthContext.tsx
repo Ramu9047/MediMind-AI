@@ -59,6 +59,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const data = await res.json();
     setUser(data.user);
     localStorage.setItem('medimind_user', JSON.stringify(data.user));
+    if (data.access_token) {
+      localStorage.setItem('medimind_token', data.access_token);
+    }
 
     if (data.user?.must_reset_password || data.must_reset_password) {
       router.push('/auth/reset-password');
@@ -80,11 +83,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const data = await res.json();
     setUser(data.user);
     localStorage.setItem('medimind_user', JSON.stringify(data.user));
+    if (data.access_token) {
+      localStorage.setItem('medimind_token', data.access_token);
+    }
   };
 
   const logout = () => {
     setUser(null);
     localStorage.removeItem('medimind_user');
+    localStorage.removeItem('medimind_token');
     router.push('/auth/login');
   };
 
