@@ -6,7 +6,7 @@ router = APIRouter(prefix="/faq", tags=["Medical FAQ Assistant"])
 
 @router.post("/ask", response_model=FAQResponse)
 async def ask_faq_assistant(query_in: FAQQuery):
-    result = faq_engine.search(query_in.query)
+    result = await faq_engine.search(query_in.query)
     return FAQResponse(
         answer=result["answer"],
         sources=result["sources"],

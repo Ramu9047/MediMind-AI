@@ -61,6 +61,21 @@ export default function FAQAssistantPage() {
     }
   };
 
+  const renderFormattedAnswer = (text: string) => {
+    if (!text) return null;
+    const parts = text.split(/(\*\*.*?\*\*)/g);
+    return parts.map((part, i) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        return (
+          <strong key={i} className="font-bold text-tealPrimary dark:text-teal-400">
+            {part.slice(2, -2)}
+          </strong>
+        );
+      }
+      return part;
+    });
+  };
+
   return (
     <div className="space-y-6 max-w-4xl mx-auto py-4 animate-card-rise">
       
@@ -111,7 +126,7 @@ export default function FAQAssistantPage() {
                     <span className="font-heading font-bold text-ink dark:text-white">MediMind Knowledge Base Response</span>
                   </div>
 
-                  <p className="whitespace-pre-line leading-relaxed">{msg.answer}</p>
+                  <p className="whitespace-pre-line leading-relaxed">{renderFormattedAnswer(msg.answer)}</p>
 
                   {/* Grounded Source Snippets */}
                   {msg.sources && msg.sources.length > 0 && (
