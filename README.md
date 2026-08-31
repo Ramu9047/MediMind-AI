@@ -1,6 +1,8 @@
-# MediMind AI - Hardened Clinical Healthcare Coordination Platform
+# MediMind AI — Hardened Clinical Healthcare Coordination Platform
 
-![MediMind AI Demo](docs/demo/medimind-walkthrough.gif)
+[![Live Demo](https://img.shields.io/badge/Live%20App-Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://medi-mind-ai-zeta.vercel.app)
+[![API Backend](https://img.shields.io/badge/Backend%20API-Render-46E3B7?style=for-the-badge&logo=render&logoColor=black)](https://medimind-ai-ikpa.onrender.com)
+[![Database](https://img.shields.io/badge/Database-MongoDB%20Atlas-47A248?style=for-the-badge&logo=mongodb&logoColor=white)](https://cloud.mongodb.com)
 
 > **CRITICAL MEDICAL DISCLAIMER (NON-NEGOTIABLE):**
 > **MediMind AI provides educational information only and is not a substitute for professional medical advice, diagnosis, or treatment. Medicine information is sourced from US NLM RxNorm & openFDA public datasets and does not constitute a medical prescription.**
@@ -9,81 +11,90 @@
 
 ---
 
-## 📌 Product Vision & Positioning
+## 🌐 Live Production Links
 
-**One-line Positioning:**
-*An AI-assisted healthcare coordination platform connecting patients, doctors, and labs — from free-text symptom intake to medicine reference and lab result, in one place.*
+- **Frontend Application**: [https://medi-mind-ai-zeta.vercel.app](https://medi-mind-ai-zeta.vercel.app)
+- **Backend API Docs (Swagger UI)**: [https://medimind-ai-ikpa.onrender.com/docs](https://medimind-ai-ikpa.onrender.com/docs)
+- **Cloud Database**: MongoDB Atlas (`medimind_db`)
 
-**The Core Journey:**
+---
+
+## 📌 Product Vision & Core Journey
+
+**Positioning:**
+*An AI-assisted clinical coordination platform connecting patients, doctors, and labs — from free-text symptom intake to medicine reference and lab result tracking, in one unified ecosystem.*
+
 ```
-[Free-Text Symptom Intake] ➔ [LLM NLP Extraction to 132 Canonical Symptoms] ➔ [Random Forest 41-Disease Classifier + LLM Explanation] ➔ [Medicine Information Hub (RxNorm / openFDA)] ➔ [Doctor Consultation Booking] ➔ [Lab Processing & Report Analysis] ➔ [Unified Patient Timeline]
+[Free-Text Symptom Intake] ➔ [LLM NLP Extraction to 132 Canonical Symptoms] ➔ [Random Forest 41-Disease Classifier + LLM Explanation] ➔ [Grounded AI Medical FAQ Engine] ➔ [Medicine Information Hub (RxNorm / openFDA)] ➔ [Doctor Consultation Booking] ➔ [Lab Report Summarization] ➔ [Unified Patient Timeline]
 ```
 
 ---
 
-## 👤 User Personas
+## 👤 User Personas & Portals
 
-| Persona | Role | Key Goal in MediMind AI |
+| Persona | Role | Key Functionality in MediMind AI |
 | :--- | :--- | :--- |
-| **Sarah Connor** | **Patient** | Describe symptoms in natural text, review AI predictions and RxNorm medicine details, book doctors/labs, track vitals. |
-| **Dr. Marcus Vance** | **Doctor** | Inspect consultation queue, review patient medical history and predictions, check pairwise drug interactions. |
-| **Alex Rivera** | **Lab Tech** | Receive diagnostic test orders, update sample status workflow, upload report PDFs for AI summarization. |
-| **SysAdmin** | **System Admin** | Provision staff accounts with temporary passwords, monitor metrics, inspect per-user security audit events. |
+| **Sarah Connor** | **Patient** | Free-text symptom input, AI disease predictions, RxNorm medicine lookup, doctor booking, lab results tracking. |
+| **Dr. Marcus Vance** | **Doctor** | Consultation queue management, patient medical history review, pairwise drug interaction checker. |
+| **Alex Rivera** | **Lab Tech** | Diagnostic test order processing, sample workflow tracking, PDF report upload & AI summarization. |
+| **SysAdmin** | **System Admin** | Staff account provisioning, performance metrics monitoring, security audit trail inspection. |
 
 ---
 
-## 🗺️ System Architecture & New Modules
+## 📸 Interface Screenshots & Core Modules
+
+### 1. Platform Landing Page & Hero Section
+![MediMind AI Home](docs/screenshots/home-page.png)
+*Clinical coordination platform overview — connecting patients, doctors, and diagnostic laboratories.*
+
+### 2. AI Medical FAQ Assistant (Grounded RAG & Intent Engine)
+![AI Medical FAQ Assistant](docs/screenshots/faq-assistant.png)
+*Evidence-grounded medical FAQ assistant featuring formatted markdown responses, citation sources, and RapidFuzz intent matching.*
+
+### 3. Patient Symptom Evaluator & ML Classifier
+![Symptom Evaluator](docs/screenshots/symptom-evaluator.png)
+*Free-text NLP symptom intake mapping into 132 canonical symptoms and 41-disease Random Forest probability classifier.*
+
+### 4. Medicine Information Hub (RxNorm & openFDA)
+![Medicine Information Hub](docs/screenshots/medicine-hub.png)
+*Real-time RxNorm & openFDA drug label integration featuring autocomplete search, pairwise interaction checking, and side-effect warnings.*
+
+### 5. Doctor Clinical Dashboard
+![Doctor Dashboard](docs/screenshots/doctor-dashboard.png)
+*Doctor portal — consultation queue, patient triage overview, and diagnostic predictions.*
+
+### 6. Admin Security Audit Dashboard
+![Admin Security Dashboard](docs/screenshots/admin-dashboard.png)
+*Admin portal — system performance metrics, paginated security audit trail, and staff provisioning.*
+
+### 7. Developer Signature Credit (Footer)
+![Footer Developer Credit](docs/screenshots/footer-credit.png)
+*Clean clinical footer featuring developer credit: **Designed & Developed By RAMAKRISHNAN S**.*
+
+---
+
+## ✨ System Architecture & Key Enhancements
 
 ```
 MediMind AI
 ├── Free-Text NLP Symptom Intake (/api/v1/symptom-nlp/extract)
-│   └── Groq/OpenAI LLM constrained to canonical 132-symptom vocabulary
+│   └── Groq/OpenAI LLM mapped strictly to 132 canonical symptoms
+├── Grounded AI Medical FAQ Engine (/api/v1/faq/ask)
+│   ├── Vector Similarity Search (TF-IDF) + RapidFuzz Query Spell Correction
+│   └── LLM Clinical Response Generation with Formatted Markdown Rendering
 ├── Medicine Information Hub (/api/v1/medicines)
 │   ├── RxNorm API (approximateTerm, rxcui lookup, brand/generic normalization)
-│   ├── openFDA Drug Label API (indications, labeled adult dosage, warnings, side effects)
+│   ├── openFDA Drug Label API (indications, adult dosage, warnings, side effects)
 │   └── Server-side MongoDB Cache (`medicine_cache` collection)
 ├── Security Audit Logging (`audit_events` collection)
 │   └── Per-user event tracking (LOGIN_SUCCESS/FAILED, SIGNUP, STAFF_PROVISIONED, 401/403 failures)
-└── Temporary Staff Password Reset Flow
-    └── `must_reset_password` flag enforcing forced password update on first staff login
+└── Database Infrastructure
+    └── MongoDB Atlas Cloud Database (`medimind_db` cluster)
 ```
 
 ---
 
-## 📸 Screenshots
-
-### Patient Dashboard
-![Patient Dashboard](docs/screenshots/patient-dashboard.png)
-*Patient portal — vitals tracking, symptom checker access, and appointment history.*
-
-### Doctor Dashboard
-![Doctor Dashboard](docs/screenshots/doctor-dashboard.png)
-*Doctor portal — consultation queue, patient triage overview, and symptom predictions.*
-
-### Lab Dashboard
-![Lab Dashboard](docs/screenshots/lab-dashboard.png)
-*Lab technician portal — pending test order queue and result entry interface.*
-
-### Admin Security Dashboard
-![Admin Dashboard](docs/screenshots/admin-dashboard.png)
-*Admin portal — system performance metrics, paginated security audit trail, and staff provisioning.*
-
----
-
-## ✨ Features Built & Hardened
-
-- **Free-Text NLP Symptom Intake**: Single free-text textarea where patients describe feelings in natural language ("I've had a sharp pain in my lower right abdomen since this morning and I feel nauseous"), extracted and mapped strictly into 132 canonical symptoms.
-- **Interactive Symptom Tag Confirmation**: Step-by-step confirmation allowing patients to add/remove/correct symptoms before running the 41-disease ML classifier.
-- **Medicine Information Hub**: Complete reference engine integrated with RxNorm and openFDA APIs, server-side cached in `medicine_cache`. Features autocomplete search, condition reverse lookup, pairwise interaction checker, and prescription warning badges.
-- **Audit Logging & Security Hardening**: Dedicated `audit_events` collection capturing actor, action, timestamp, and details for logins, signups, staff provisioning, report uploads, and 401/403 authorization failures.
-- **Forced Temporary Password Reset**: Staff accounts provisioned by Admin with temporary passwords are flagged `must_reset_password: True` and forced to change passwords via `/auth/reset-password` on first login.
-- **Lab Order Unique IDs**: Format persisted as `labtest_<uuid_hex>` so unique order suffixes are fully preserved and displayed.
-- **Real Event Timeline Timestamps**: Every timeline event writes real-time UTC timestamps (`datetime.now(timezone.utc)`) at execution time.
-- **Appointment Past Date Validation**: Booking form rejects dates prior to today with HTTP 400, and past appointments automatically display as `Past`.
-
----
-
-## 🗄️ MongoDB Atlas Collections Schema
+## 🗄️ MongoDB Atlas Schema Overview
 
 ### `audit_events` Collection
 ```json
@@ -94,7 +105,7 @@ MediMind AI
   "role": "patient",
   "status_code": 200,
   "details": { "user_id": "pat_demo_01" },
-  "timestamp": "2026-08-23T22:00:00Z"
+  "timestamp": "2026-08-31T12:00:00Z"
 }
 ```
 
@@ -107,18 +118,18 @@ MediMind AI
   "brand_names": ["Prilosec"],
   "drug_class": "Proton Pump Inhibitors (PPIs)",
   "indications": "Treatment of gastroesophageal reflux disease (GERD)...",
-  "dosage_and_administration": "Standard labeled dosage — not a personalized prescription...",
+  "dosage_and_administration": "Standard labeled dosage — reference only...",
   "is_prescription_required": true,
   "common_side_effects": ["Headache", "Nausea", "Abdominal pain"],
-  "cached_at": "2026-08-23T22:00:00Z"
+  "cached_at": "2026-08-31T12:00:00Z"
 }
 ```
 
 ---
 
-## 🧪 Automated Testing
+## 🧪 Automated Test Suite
 
-Run the automated test suite covering appointment slot booking, timeline timestamp ordering, 5 NLP symptom extraction examples, and Medicine Hub endpoints:
+Run the automated backend test suite covering appointment booking, timeline timestamping, NLP symptom extractions, and Medicine Hub endpoints:
 
 ```bash
 cd backend
@@ -126,7 +137,7 @@ python -m unittest tests/test_suite.py
 ```
 
 Output:
-```
+```text
 [NLP Test 1] Input: "I've had a sharp pain in my lower right..." -> Matched: ['Nausea', 'Abdominal Pain'] (Confidence: high)
 [NLP Test 2] Input: "Splitting headache with sensitivity to li..." -> Matched: ['Headache', 'Visual Disturbances', 'Dizziness'] (Confidence: high)
 ...
@@ -136,7 +147,7 @@ OK
 
 ---
 
-## 🚀 Local Quickstart & Setup Instructions
+## 🚀 Local Quickstart Setup
 
 ### 1. Backend Setup (FastAPI & MongoDB Atlas)
 ```bash
@@ -144,16 +155,23 @@ cd backend
 python -m venv venv
 .\venv\Scripts\activate
 pip install -r requirements.txt
-# Set your MongoDB Atlas connection URI in backend/.env:
-# MONGODB_URI=mongodb+srv://<username>:<password>@cluster0.mongodb.net/medimind_db?retryWrites=true&w=majority
+# Set your MongoDB Atlas URI in backend/.env:
+# MONGODB_URI=mongodb+srv://<username>:<password>@cluster0.mongodb.net/medimind_db?appName=Cluster0
 python main.py
 ```
-*Backend runs on `http://127.0.0.1:8000`. Interactive docs at `http://127.0.0.1:8000/docs`.*
+*Backend runs on `http://127.0.0.1:8000`. Interactive OpenAPI docs at `http://127.0.0.1:8000/docs`.*
 
-### 2. Frontend Setup (Next.js 14)
+### 2. Frontend Setup (Next.js 14 & Tailwind)
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
 *Frontend runs on `http://localhost:3000`.*
+
+---
+
+## 👨‍💻 Developer & Author
+
+**Designed & Developed By RAMAKRISHNAN S**  
+*Built with clinical precision for portfolio demonstration.*
