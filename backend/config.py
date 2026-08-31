@@ -14,7 +14,7 @@ class Settings(BaseSettings):
 
     
     # Database (MongoDB Atlas exclusively)
-    MONGODB_URI: str = os.getenv("MONGODB_URI", "mongodb+srv://raamukutty2004_db_user:G4NerhYDZ7By59my@cluster0.ixnnnc1.mongodb.net/medimind_db?appName=Cluster0")
+    MONGODB_URI: str = os.getenv("MONGODB_URI", "mongodb+srv://raamukutty2004_db_user:HCJ3HBsAjGZknVTl@cluster0.gbo0xft.mongodb.net/medimind_db?appName=Cluster0")
     DATABASE_NAME: str = os.getenv("DATABASE_NAME", "medimind_db")
     
     # LLM Settings
