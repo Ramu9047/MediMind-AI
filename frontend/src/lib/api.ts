@@ -1,4 +1,4 @@
-const API_BASE = '/api/v1';
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || '/api/v1').replace(/\/$/, '');
 
 export async function fetchApi<T = any>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const headers: Record<string, string> = {
@@ -16,7 +16,8 @@ export async function fetchApi<T = any>(endpoint: string, options: RequestInit =
     }
   }
 
-  const response = await fetch(`${API_BASE}${endpoint}`, {
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  const response = await fetch(`${API_BASE}${cleanEndpoint}`, {
     ...options,
     credentials: 'include',
     headers,

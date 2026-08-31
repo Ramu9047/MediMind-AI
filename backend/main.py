@@ -48,12 +48,17 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Configured CORS Middleware
 cors_origins_str = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000")
-allowed_origins = [origin.strip() for origin in cors_origins_str.split(",") if origin.strip()]
+if cors_origins_str.strip() == "*":
+    allowed_origins = ["*"]
+    allow_credentials = False
+else:
+    allowed_origins = [origin.strip() for origin in cors_origins_str.split(",") if origin.strip()]
+    allow_credentials = True
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
-    allow_credentials=True,
+    allow_credentials=allow_credentials,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -80,4 +85,5 @@ async def root():
     }
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)
